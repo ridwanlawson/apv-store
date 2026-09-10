@@ -15,6 +15,7 @@ export function BrandForm() {
   const [hero, setHero] = useState({ ...b.hero });
   const [msg, setMsg] = useState("");
   const [saved, setSaved] = useState(false);
+  const [saving, setSaving] = useState(false);
 
   // Sinkron sekali saat brand berubah dari luar (hindari timpa ketikan).
   const [synced, setSynced] = useState(b.name);
@@ -25,14 +26,17 @@ export function BrandForm() {
     setColors({ ...b.colors }); setHero({ ...b.hero });
   }
 
-  const save = () => {
+  const save = async () => {
+    setSaving(true);
+    setMsg("");
     try {
-      saveBrand({ name, tagline, contact, logo, logoFull, favicon, colors, hero });
-      setMsg("");
+      await saveBrand({ name, tagline, contact, logo, logoFull, favicon, colors, hero });
       setSaved(true);
       setTimeout(() => setSaved(false), 1500);
     } catch (e) {
       setMsg(e instanceof Error ? e.message : "Gagal menyimpan");
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -127,8 +131,8 @@ export function BrandForm() {
 
       {msg && <p role="alert" className="text-sm text-red-400">{msg}</p>}
       <div className="flex gap-2">
-        <button onClick={save} className="rounded-xl bg-white px-6 py-3 font-bold text-black cursor-pointer">
-          {saved ? "Tersimpan ✓" : "Simpan tampilan"}
+        <button onClick={() => void save()} disabled={saving} className="rounded-xl bg-white px-6 py-3 font-bold text-black cursor-pointer disabled:opacity-50">
+          {saving ? "Menyimpan…" : saved ? "Tersimpan ✓" : "Simpan tampilan"}
         </button>
         <button onClick={() => { resetBrand(); setMsg(""); }} className="rounded-xl border border-white/20 px-6 py-3 cursor-pointer">
           Reset default

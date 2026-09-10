@@ -1,8 +1,9 @@
 "use client";
-import { useState } from "react";
-import { useProductStore, toCSV, useMounted } from "@/lib/store";
+import { useEffect, useState } from "react";
+import { useProductStore, toCSV, useMounted, persistProduct, removeProduct } from "@/lib/store";
 import { useAuth } from "@/lib/auth";
 import { listOrders } from "@/lib/orders";
+import { fetchOrders, getSession, type DbOrderRow } from "@/lib/supabase";
 import { BrandForm } from "@/components/admin/BrandForm";
 import { ProductEditor } from "@/components/admin/ProductEditor";
 import type { Product } from "@/lib/products";
@@ -20,9 +21,20 @@ export default function Admin() {
   const [stock, setStock] = useState("20");
   const [tab, setTab] = useState<"products" | "orders" | "brand">("products");
   const [editing, setEditing] = useState<string | null>(null);
+  const [dbOrders, setDbOrders] = useState<DbOrderRow[] | null>(null);
   const mounted = useMounted();
+  // Order DB bila login (server truth); kalau tidak -> lokal browser.
+  useEffect(() => {
+    if (tab !== "orders" || !user || !mounted || !getSession()) {
+      setDbOrders(null);
+      return;
+    }
+    fetchOrders("a-private-violence")
+      .then((r) => setDbOrders(r ?? []))
+      .catch(() => setDbOrders(null));
+  }, [tab, user, mounted]);
   const orders = tab === "orders" && mounted ? listOrders() : [];
-  const orderCount = mounted ? listOrders().length : 0;
+  const orderCount = dbOrders ? dbOrders.length : mounted ? listOrders().length : 0;
 
   // Tunggu mount agar SSR/client sama (auth dibaca dari browser).
   if (!mounted || !user) {
@@ -65,6 +77,12 @@ export default function Admin() {
     };
     setItems((prev) => [p, ...prev]);
     setName("");
+    // Samakan id DB bila login (best-effort).
+    persistProduct(p)
+      .then((id) => {
+        if (id !== p.id) setItems((prev) => prev.map((x) => (x.id === p.id ? { ...x, id } : x)));
+      })
+      .catch(() => { /* tetap lokal */ });
   };
 
   return (
@@ -82,14 +100,29 @@ export default function Admin() {
         <div className="mt-6"><BrandForm /></div>
       ) : tab === "orders" ? (
         <div className="mt-6 flex flex-col gap-3">
-          {orders.length === 0 && <p className="opacity-60">No orders yet — checkout dari /cart untuk test.</p>}
-          {orders.map((o) => (
-            <div key={o.orderId} className="rounded-xl border border-white/10 p-4 text-sm">
-              <p><b>{o.orderId}</b> <span className="opacity-50">· {o.email} · {o.lane} · ${o.total}</span></p>
-              <p className="mt-1 opacity-70">{o.items.map((i) => `${i.name} ×${i.qty} (${i.size})`).join(", ")}</p>
-            </div>
-          ))}
-          <p className="text-xs opacity-50">Lokal (browser ini). Live: orders masuk Supabase + email otomatis.</p>
+          {dbOrders ? (
+            <>
+              {dbOrders.length === 0 && <p className="opacity-60">Belum ada order di Supabase.</p>}
+              {dbOrders.map((o) => (
+                <div key={o.id} className="rounded-xl border border-white/10 p-4 text-sm">
+                  <p><b>{o.id.slice(0, 8)}…</b> <span className="opacity-50">· {o.email} · {o.lane} · ${o.total_usd} · {new Date(o.created_at).toLocaleString()}</span></p>
+                  <p className="mt-1 opacity-70">{o.items.map((i) => `${i.slug} ×${i.qty} (${i.size})`).join(", ")}</p>
+                </div>
+              ))}
+              <p className="text-xs opacity-50">Live dari Supabase (semua device).</p>
+            </>
+          ) : (
+            <>
+              {orders.length === 0 && <p className="opacity-60">No orders yet — checkout dari /cart untuk test.</p>}
+              {orders.map((o) => (
+                <div key={o.orderId} className="rounded-xl border border-white/10 p-4 text-sm">
+                  <p><b>{o.orderId}</b> <span className="opacity-50">· {o.email} · {o.lane} · ${o.total}</span></p>
+                  <p className="mt-1 opacity-70">{o.items.map((i) => `${i.name} ×${i.qty} (${i.size})`).join(", ")}</p>
+                </div>
+              ))}
+              <p className="text-xs opacity-50">Lokal (browser ini). Login admin untuk order live Supabase.</p>
+            </>
+          )}
         </div>
       ) : (
       <>
@@ -108,7 +141,11 @@ export default function Admin() {
           >
             Export CSV
           </button>
-          <button onClick={() => setItems((p) => p.filter((i) => !i.isSample))} className="rounded-lg border border-red-400/50 px-3 py-2 cursor-pointer">Purge samples</button>
+          <button onClick={() => {
+            const gone = items.filter((i) => i.isSample);
+            setItems((p) => p.filter((i) => !i.isSample));
+            gone.forEach((g) => { removeProduct(g.id).catch(() => {}); });
+          }} className="rounded-lg border border-red-400/50 px-3 py-2 cursor-pointer">Purge samples</button>
         </div>
       </div>
 
@@ -133,21 +170,40 @@ export default function Admin() {
               <div className="flex-1"><b>{p.name}</b> <span className="opacity-50">· ${p.priceUsd} · {p.type}{p.type === "stock" ? ` · stock ${p.stockQty}` : ""} · {p.images.length} foto {p.isSample ? "· SAMPLE" : ""}</span></div>
               <button onClick={() => setEditing((e) => (e === p.id ? null : p.id))}
                 className="rounded-lg border border-white/20 px-3 py-1.5 cursor-pointer" aria-label={`Edit ${p.name}`}>Edit</button>
-              <button onClick={() => setItems((prev) => prev.map((x) => (x.id === p.id ? { ...x, published: !x.published } : x)))}
+              <button onClick={() => {
+                const np = { ...p, published: !p.published };
+                setItems((prev) => prev.map((x) => (x.id === p.id ? np : x)));
+                persistProduct(np).catch(() => {});
+              }}
                 className="rounded-lg border border-white/20 px-3 py-1.5 cursor-pointer">{p.published ? "Unpublish" : "Publish"}</button>
               {p.type === "stock" && (
-                <button onClick={() => setItems((prev) => prev.map((x) => (x.id === p.id ? { ...x, stockQty: (x.stockQty ?? 0) + 1 } : x)))}
+                <button onClick={() => {
+                  const np = { ...p, stockQty: (p.stockQty ?? 0) + 1 };
+                  setItems((prev) => prev.map((x) => (x.id === p.id ? np : x)));
+                  persistProduct(np).catch(() => {});
+                }}
                   className="rounded-lg border border-white/20 px-3 py-1.5 cursor-pointer" aria-label={`Restock ${p.name}`}>+1</button>
               )}
               {!p.isSample && (
-                <button onClick={() => setItems((prev) => prev.filter((x) => x.id !== p.id))}
+                <button onClick={() => {
+                  setItems((prev) => prev.filter((x) => x.id !== p.id));
+                  removeProduct(p.id).catch(() => {});
+                }}
                   className="rounded-lg border border-red-400/40 px-3 py-1.5 cursor-pointer" aria-label={`Delete ${p.name}`}>Delete</button>
               )}
             </div>
             {editing === p.id && (
               <div className="mt-2">
                 <ProductEditor p={p}
-                  onSave={(np) => { setItems((prev) => prev.map((x) => (x.id === p.id ? np : x))); setEditing(null); }}
+                  onSave={(np) => {
+                    setItems((prev) => prev.map((x) => (x.id === p.id ? np : x)));
+                    persistProduct(np)
+                      .then((id) => {
+                        if (id !== np.id) setItems((prev) => prev.map((x) => (x.id === np.id ? { ...x, id } : x)));
+                      })
+                      .catch(() => {});
+                    setEditing(null);
+                  }}
                   onCancel={() => setEditing(null)} />
               </div>
             )}

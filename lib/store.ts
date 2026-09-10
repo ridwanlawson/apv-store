@@ -1,8 +1,9 @@
 "use client";
-// Product store: sample bawaan + override admin di localStorage.
-// Nanti: ganti isi hook ini dengan fetchProducts(brandId) dari lib/supabase.ts.
-import { useEffect, useState, useSyncExternalStore } from "react";
+// Product store 3 lapis: seed (SSR) < lokal (browser) < DB Supabase (server truth saat login).
+// Tanpa sesi: perilaku lokal seperti sebelumnya. Dengan sesi: baca DB + tulis DB.
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { products as seed, type Product } from "./products";
+import { fetchAllProducts, toProduct, upsertProduct, deleteProductRow, getSession } from "./supabase";
 
 /** true hanya setelah hydrate — pakai ini untuk render data client (anti hydration-mismatch). */
 export function useMounted() {
@@ -39,14 +40,62 @@ export function useProductStore() {
   const [items, setItems] = useState<Product[]>(() =>
     typeof window === "undefined" ? seed : load()
   );
+  const mounted = useMounted();
+  const itemsRef = useRef<Product[]>(items);
   useEffect(() => {
+    itemsRef.current = items;
     try {
       localStorage.setItem(KEY, JSON.stringify(items));
     } catch {
       /* storage penuh -> abaikan */
     }
   }, [items]);
+  // Sinkron dari DB sekali setelah mount bila ada sesi (admin login).
+  // DB ada isi -> pakai DB. DB kosong -> bootstrap: dorong lokal ke DB (migrasi pertama).
+  useEffect(() => {
+    if (!mounted || !getSession()) return;
+    fetchAllProducts(seed[0]?.brandId ?? "a-private-violence")
+      .then((rows) => {
+        if (rows && rows.length > 0) {
+          setItems(rows.map(toProduct));
+        } else {
+          void Promise.all(
+            itemsRef.current.map(async (p) => {
+              try {
+                const id = await upsertProduct(p);
+                return { old: p.id, id };
+              } catch {
+                return { old: p.id, id: p.id };
+              }
+            })
+          ).then((maps) => {
+            const changed = maps.filter((m) => m.old !== m.id);
+            if (changed.length > 0) {
+              setItems((prev) =>
+                prev.map((p) => {
+                  const m = changed.find((c) => c.old === p.id);
+                  return m ? { ...p, id: m.id } : p;
+                })
+              );
+            }
+          });
+        }
+      })
+      .catch(() => { /* offline / belum ada akses -> tetap lokal */ });
+  }, [mounted]);
   return { items, setItems };
+}
+
+/** Tulis produk ke DB bila login (best-effort). Return id final. */
+export async function persistProduct(p: Product): Promise<string> {
+  if (!getSession()) return p.id;
+  return upsertProduct(p);
+}
+
+/** Hapus produk di DB bila login (best-effort). */
+export async function removeProduct(id: string): Promise<void> {
+  if (!getSession()) return;
+  await deleteProductRow(id);
 }
 
 export function toCSV(items: Product[]): string {
