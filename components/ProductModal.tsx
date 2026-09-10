@@ -3,7 +3,7 @@ import Image from "next/image";
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { useCart } from "@/lib/cart";
-import { Price, money, useCurrency } from "@/lib/currency";
+import { Price, money, useDisplayCurrency } from "@/lib/currency";
 import { categoryForProduct } from "@/lib/sizeguide";
 import { SizeGuideModal } from "./SizeGuideModal";
 import { type Product } from "@/lib/products";
@@ -11,7 +11,7 @@ import { type Product } from "@/lib/products";
 // Quick-view modal: gallery + size + add-to-cart. ponytail: no 3D lib, spin = swipe images.
 export function ProductModal({ p, onClose }: { p: Product | null; onClose: () => void }) {
   const { add } = useCart();
-  const cur = useCurrency();
+  const cur = useDisplayCurrency();
   const [guide, setGuide] = useState(false);
   const [img, setImg] = useState(0);
   const [size, setSize] = useState<string>(p?.sizes[1] ?? p?.sizes[0] ?? "M");
