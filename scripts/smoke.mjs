@@ -40,6 +40,7 @@ assert.ok(read("components/CookieConsent.tsx").includes("apv-consent-v1"), "cons
 assert.ok(read("lib/currency.tsx").includes("IDR") && layout.includes("CurrencyProvider"), "currency missing");
 assert.ok(read("app/shop/page.tsx").includes("aria-pressed"), "shop filter missing");
 assert.ok(read("lib/auth.tsx").includes("magiclink") && read("app/admin/page.tsx").includes("useAuth"), "auth missing");
+assert.ok(read("lib/auth.tsx").includes("access_token"), "magic-link hash handling missing");
 
 // 7. Size guide: data + UI terpasang di PDP, quick-view, footer
 assert.ok(read("lib/sizeguide.ts").includes("recommendTop"), "size data missing");
