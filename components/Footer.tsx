@@ -9,8 +9,8 @@ export function Footer() {
   return (
     <footer className="mt-20 border-t border-white/10 px-4 py-10 text-sm opacity-70">
       {b.logoFull && (
-        <div className="mx-auto mb-6 max-w-6xl">
-          <Image src={b.logoFull} alt={`${b.name} lockup`} width={320} height={180} className="h-16 w-auto opacity-90" loading="lazy" />
+        <div className="mx-auto mb-8 flex max-w-6xl justify-center">
+          <Image src={b.logoFull} alt={`${b.name} lockup`} width={480} height={270} className="h-20 w-auto opacity-90 sm:h-24" loading="lazy" />
         </div>
       )}
       <div className="mx-auto flex max-w-6xl flex-col gap-2 sm:flex-row sm:justify-between">
