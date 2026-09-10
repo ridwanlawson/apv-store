@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { useCart } from "@/lib/cart";
 import { Price, money, useDisplayCurrency } from "@/lib/currency";
+import { useT } from "@/lib/i18n";
 import { categoryForProduct } from "@/lib/sizeguide";
 import { SizeGuideModal } from "./SizeGuideModal";
 import { type Product } from "@/lib/products";
@@ -12,6 +13,7 @@ import { type Product } from "@/lib/products";
 export function ProductModal({ p, onClose }: { p: Product | null; onClose: () => void }) {
   const { add } = useCart();
   const cur = useDisplayCurrency();
+  const t = useT();
   const [guide, setGuide] = useState(false);
   const [img, setImg] = useState(0);
   const [size, setSize] = useState<string>(p?.sizes[1] ?? p?.sizes[0] ?? "M");
@@ -54,8 +56,8 @@ export function ProductModal({ p, onClose }: { p: Product | null; onClose: () =>
             <p className="text-xl font-bold"><Price usdAmount={p.priceUsd} /></p>
             <div>
               <div className="mb-2 flex items-center justify-between">
-                <p className="text-xs tracking-widest opacity-60">SIZE</p>
-                <button onClick={() => setGuide(true)} className="text-xs underline underline-offset-4 opacity-70 hover:opacity-100 cursor-pointer">Size guide</button>
+                <p className="text-xs tracking-widest opacity-60">{t("size")}</p>
+                <button onClick={() => setGuide(true)} className="text-xs underline underline-offset-4 opacity-70 hover:opacity-100 cursor-pointer">{t("sizeGuide")}</button>
               </div>
               <div className="flex flex-wrap gap-2">
                 {p.sizes.map((s) => (
@@ -70,9 +72,9 @@ export function ProductModal({ p, onClose }: { p: Product | null; onClose: () =>
               add({ slug: p.slug, name: p.name, price: p.priceUsd, image: p.images[0], size, qty: 1 });
               setAdded(true); setTimeout(() => { setAdded(false); onClose(); }, 700);
             }} className="mt-auto min-h-[48px] rounded-xl bg-white font-bold text-black cursor-pointer hover:opacity-90">
-              {added ? "Added ✓" : `Add to cart — ${money(p.priceUsd, cur)}`}
+              {added ? t("added") : `${t("addToCart")} — ${money(p.priceUsd, cur)}`}
             </motion.button>
-            <p className="text-xs opacity-50">Worldwide: Economy 10–20 days · Express 3–7 days. Duties (DDU) by buyer.</p>
+            <p className="text-xs opacity-50">{t("shipNote")}</p>
           </div>
         </motion.div>
       </motion.div>

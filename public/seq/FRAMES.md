@@ -1,7 +1,9 @@
-# Sequence tee-705 — 240 frames scroll-scrub (asset user, compressed 66MB → 4.9MB)
+# Sequence tee-705 — 120 frame WebP transparan (scroll-scrub fullscreen)
 
-- Sumber: `D:\dev\assets\` (00001.png–00240.png, 1280×720, ~20KB/frame) + `spin.mp4` (fallback).
-- Journey: 001–180 rotasi 360° (060/120 side-back, hanger kayu terlihat) · 181–210 push-in logo · 211–240 macro kain.
-- Bukan loop: 240 ≠ 001 → desain satu arah (scrollytelling), bukan spin infinite.
-- Catatan: logo "705" (placeholder, ganti frame APV asli nanti) · sparkle AI 2–3 frame · hanger di-crop via CSS object-position.
-- Ganti produk: taruh frame baru di `public/seq/<slug>/` (00001.png… + spin.mp4 opsional), set `sequence: "<slug>"` di `brands/*.ts`.
+- Sumber: `D:\dev\assets\` (240 PNG transparan 1280×720, bg removed).
+- Build: tiap frame ke-2 → 960px WebP q82 → 00001.webp–00120.webp, total ~2MB.
+- Journey: awal–tengah rotasi 360° (hanger kayu terlihat di side view) · akhir push-in logo + macro kain.
+- Bukan loop: desain satu arah (scrollytelling). Stage gelap (alpha menyatu).
+- Component: `components/ScrollSequence.tsx` (`seq`, `frames`, `ext`), teks via i18n.
+- Ganti produk: frame baru di `public/seq/<slug>/` (5-digit webp) + set `sequence: "<slug>"`, `frames` di pemanggil.
+- Catatan: logo "705" placeholder; sparkle AI 2–3 frame; spin.mp4 (bg putih) hanya fallback PDP.

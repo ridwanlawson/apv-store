@@ -5,16 +5,22 @@ import { getBrand } from "@/brands";
 import { CartProvider } from "@/lib/cart";
 import SmoothScroll from "@/components/SmoothScroll";
 import { Navbar } from "@/components/Navbar";
+import { Footer } from "@/components/Footer";
 import { CookieConsent } from "@/components/CookieConsent";
 import { CurrencyProvider } from "@/lib/currency";
 import { AuthProvider } from "@/lib/auth";
+import { LangProvider } from "@/lib/i18n";
 
 const display = Anton({ weight: "400", subsets: ["latin"], variable: "--font-display" });
 const body = Inter({ subsets: ["latin"], variable: "--font-body" });
 
 export function generateMetadata(): Metadata {
   const b = getBrand();
-  return { title: b.seo.title, description: b.seo.description };
+  return {
+    title: b.seo.title,
+    description: b.seo.description,
+    icons: b.logo ? [{ rel: "icon", url: b.logo }] : undefined,
+  };
 }
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
@@ -28,23 +34,14 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <CartProvider>
           <CurrencyProvider>
           <AuthProvider>
+          <LangProvider>
           <SmoothScroll>
-            <Navbar brandName={b.name} accent={b.colors.accent} />
-            <div className="pt-14">{children}</div>
-            <footer className="mt-20 border-t border-white/10 px-4 py-10 text-sm opacity-70">
-              <div className="mx-auto flex max-w-6xl flex-col gap-2 sm:flex-row sm:justify-between">
-                <p>© {new Date().getFullYear()} {b.name} · {b.tagline}</p>
-                <nav className="flex gap-4" aria-label="Policies">
-                  <a href="/size-guide" className="hover:underline">Size guide</a>
-                  <a href="/policies/shipping" className="hover:underline">Shipping</a>
-                  <a href="/policies/returns" className="hover:underline">Returns</a>
-                  <a href="/policies/privacy" className="hover:underline">Privacy</a>
-                </nav>
-              </div>
-              <p className="mx-auto mt-2 max-w-6xl">Contact: {b.contact} · Duties (DDU) by buyer · Returns 30 days (buyer pays return shipping)</p>
-            </footer>
+            <Navbar brandName={b.name} accent={b.colors.accent} logo={b.logo} />
+            <div className="pt-16">{children}</div>
+            <Footer />
             <CookieConsent />
           </SmoothScroll>
+          </LangProvider>
           </AuthProvider>
           </CurrencyProvider>
         </CartProvider>

@@ -49,13 +49,16 @@ for (const p of ["components/SizeGuideContent.tsx", "components/SizeGuideModal.t
 }
 assert.ok(read("app/product/[slug]/page.tsx").includes("SizeGuideModal"), "PDP guide missing");
 assert.ok(read("components/ProductModal.tsx").includes("SizeGuideModal"), "quick-view guide missing");
+assert.ok(read("lib/i18n.tsx").includes('"ja"') && read("components/Navbar.tsx").includes("LangSelector"), "i18n missing");
+assert.ok((read("app/page.tsx").match(/useT\(\)/g) || []).length >= 1, "home i18n missing");
 
 // 8. Scroll-3D + PDP richness
-assert.ok(existsSync(join(root, "public/seq/tee-705/00001.png")), "seq frames missing");
+assert.ok(existsSync(join(root, "public/seq/tee-705/00001.webp")), "seq frames missing");
+assert.ok(existsSync(join(root, "public/seq/tee-705/00120.webp")), "seq frames incomplete");
 assert.ok(existsSync(join(root, "public/seq/tee-705/spin.mp4")), "seq video missing");
 assert.ok(read("brands/a-private-violence.ts").includes('sequence: "tee-705"'), "brand sequence missing");
 assert.ok(read("app/page.tsx").includes("ScrollSequence"), "home sequence missing");
-assert.ok(read("components/PdpExtras.tsx").includes("COMPLETE THE LOOK"), "pdp extras missing");
+assert.ok(read("components/PdpExtras.tsx").includes('t("cross")'), "pdp extras missing");
 assert.ok(read("lib/reviews.ts").includes("verified buyer") || read("components/PdpExtras.tsx").includes("verified"), "reviews missing");
 
 // 9. PR fixes: modal key reset, seq cache reuse, orders persist, no dead code

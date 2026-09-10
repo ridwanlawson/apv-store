@@ -1,24 +1,37 @@
 "use client";
+import Image from "next/image";
 import Link from "next/link";
 import { useCart } from "@/lib/cart";
 import { CurrencySelector } from "@/lib/currency";
+import { LangSelector, useT } from "@/lib/i18n";
 
-export function Navbar({ brandName, accent }: { brandName: string; accent: string }) {
+// Navbar 3 zona: kiri navigasi, tengah emblem brand, kanan utilitas.
+export function Navbar({ brandName, accent, logo }: { brandName: string; accent: string; logo?: string }) {
   const { count } = useCart();
+  const t = useT();
   return (
     <header className="fixed inset-x-0 top-0 z-40 border-b border-white/10 bg-black/70 backdrop-blur">
-      <nav className="mx-auto flex h-14 max-w-6xl items-center justify-between px-4" aria-label="Main">
-        <Link href="/" className="font-display text-lg tracking-widest" style={{ color: "var(--brand-fg)" }}>
-          {brandName.toUpperCase()}
+      <nav className="relative mx-auto flex h-16 max-w-6xl items-center justify-between px-4" aria-label="Main">
+        <div className="flex flex-1 items-center gap-3 text-sm">
+          <Link href="/shop" className="hover:opacity-80">{t("navShop")}</Link>
+          <Link href="/lookbook" className="hidden hover:opacity-80 md:inline">{t("navLook")}</Link>
+          <Link href="/track-order" className="hidden hover:opacity-80 md:inline">{t("navTrack")}</Link>
+        </div>
+        <Link href="/" aria-label={brandName} className="absolute left-1/2 -translate-x-1/2 transition-transform duration-300 hover:scale-105">
+          {logo ? (
+            <Image src={logo} alt={`${brandName} emblem`} width={96} height={48} className="h-10 w-auto" priority />
+          ) : (
+            <span className="font-display text-lg tracking-widest" style={{ color: "var(--brand-fg)" }}>
+              {brandName.toUpperCase()}
+            </span>
+          )}
         </Link>
-        <div className="flex items-center gap-2 text-sm">
+        <div className="flex flex-1 items-center justify-end gap-2 text-sm">
+          <LangSelector />
           <CurrencySelector />
-          <Link href="/shop" className="hover:opacity-80">Shop</Link>
-          <Link href="/lookbook" className="hidden sm:inline hover:opacity-80">Lookbook</Link>
-          <Link href="/track-order" className="hidden sm:inline hover:opacity-80">Track</Link>
           {/* suppressHydrationWarning: count cart dari localStorage hanya ada di client */}
-          <Link href="/cart" aria-label={`Cart, ${count} items`} suppressHydrationWarning className="rounded-full px-3 py-1.5 font-semibold text-black" style={{ background: accent }}>
-            <span suppressHydrationWarning>Cart · {count}</span>
+          <Link href="/cart" aria-label={`${t("navCart")}, ${count} items`} suppressHydrationWarning className="rounded-full px-3 py-1.5 font-semibold text-black" style={{ background: accent }}>
+            <span suppressHydrationWarning>{t("navCart")} · {count}</span>
           </Link>
         </div>
       </nav>

@@ -17,6 +17,7 @@ export interface BrandConfig {
   contact: string;
   socials: { instagram?: string; tiktok?: string };
   hero: { headline: string; sub: string; cta: string; poster: string };
+  logo?: string; // emblem tengah navbar, mis. /brands/a-private-violence/logo.png
   sequence?: string; // folder di public/seq/<id>/ (scroll-3D), kosong = section disembunyikan
   seo: { title: string; description: string };
   shippingOrigin: string;
