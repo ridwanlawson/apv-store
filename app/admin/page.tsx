@@ -3,6 +3,8 @@ import { useState } from "react";
 import { useProductStore, toCSV, useMounted } from "@/lib/store";
 import { useAuth } from "@/lib/auth";
 import { listOrders } from "@/lib/orders";
+import { BrandForm } from "@/components/admin/BrandForm";
+import { ProductEditor } from "@/components/admin/ProductEditor";
 import type { Product } from "@/lib/products";
 
 // Brand-admin: tambah/edit produk + stok via UI (persisten localStorage;
@@ -16,7 +18,8 @@ export default function Admin() {
   const [price, setPrice] = useState("45");
   const [type, setType] = useState<"pod" | "stock">("pod");
   const [stock, setStock] = useState("20");
-  const [tab, setTab] = useState<"products" | "orders">("products");
+  const [tab, setTab] = useState<"products" | "orders" | "brand">("products");
+  const [editing, setEditing] = useState<string | null>(null);
   const mounted = useMounted();
   const orders = tab === "orders" && mounted ? listOrders() : [];
   const orderCount = mounted ? listOrders().length : 0;
@@ -68,14 +71,16 @@ export default function Admin() {
     <main className="mx-auto max-w-4xl px-4 py-10">
       <p className="text-xs opacity-50">{user.email} · {user.role} · {mode} mode · <button onClick={logout} className="underline cursor-pointer">Logout</button></p>
       <div className="mt-2 flex gap-2" role="tablist" aria-label="Admin sections">
-        {(["products", "orders"] as const).map((t) => (
+        {(["products", "orders", "brand"] as const).map((t) => (
           <button key={t} role="tab" aria-selected={tab === t} onClick={() => setTab(t)}
             className={`rounded-full border px-4 py-1.5 text-sm capitalize cursor-pointer ${tab === t ? "border-white bg-white font-bold text-black" : "border-white/20"}`}>
-            {t} {t === "orders" && `(${orderCount})`}
+            {t === "brand" ? "Tampilan" : t} {t === "orders" && `(${orderCount})`}
           </button>
         ))}
       </div>
-      {tab === "orders" ? (
+      {tab === "brand" ? (
+        <div className="mt-6"><BrandForm /></div>
+      ) : tab === "orders" ? (
         <div className="mt-6 flex flex-col gap-3">
           {orders.length === 0 && <p className="opacity-60">No orders yet — checkout dari /cart untuk test.</p>}
           {orders.map((o) => (
@@ -123,17 +128,28 @@ export default function Admin() {
 
       <div className="mt-6 flex flex-col gap-3">
         {items.map((p) => (
-          <div key={p.id} className="flex items-center gap-3 rounded-xl border border-white/10 p-3 text-sm">
-            <div className="flex-1"><b>{p.name}</b> <span className="opacity-50">· ${p.priceUsd} · {p.type}{p.type === "stock" ? ` · stock ${p.stockQty}` : ""} {p.isSample ? "· SAMPLE" : ""}</span></div>
-            <button onClick={() => setItems((prev) => prev.map((x) => (x.id === p.id ? { ...x, published: !x.published } : x)))}
-              className="rounded-lg border border-white/20 px-3 py-1.5 cursor-pointer">{p.published ? "Unpublish" : "Publish"}</button>
-            {p.type === "stock" && (
-              <button onClick={() => setItems((prev) => prev.map((x) => (x.id === p.id ? { ...x, stockQty: (x.stockQty ?? 0) + 1 } : x)))}
-                className="rounded-lg border border-white/20 px-3 py-1.5 cursor-pointer" aria-label={`Restock ${p.name}`}>+1</button>
-            )}
-            {!p.isSample && (
-              <button onClick={() => setItems((prev) => prev.filter((x) => x.id !== p.id))}
-                className="rounded-lg border border-red-400/40 px-3 py-1.5 cursor-pointer" aria-label={`Delete ${p.name}`}>Delete</button>
+          <div key={p.id}>
+            <div className="flex items-center gap-3 rounded-xl border border-white/10 p-3 text-sm">
+              <div className="flex-1"><b>{p.name}</b> <span className="opacity-50">· ${p.priceUsd} · {p.type}{p.type === "stock" ? ` · stock ${p.stockQty}` : ""} · {p.images.length} foto {p.isSample ? "· SAMPLE" : ""}</span></div>
+              <button onClick={() => setEditing((e) => (e === p.id ? null : p.id))}
+                className="rounded-lg border border-white/20 px-3 py-1.5 cursor-pointer" aria-label={`Edit ${p.name}`}>Edit</button>
+              <button onClick={() => setItems((prev) => prev.map((x) => (x.id === p.id ? { ...x, published: !x.published } : x)))}
+                className="rounded-lg border border-white/20 px-3 py-1.5 cursor-pointer">{p.published ? "Unpublish" : "Publish"}</button>
+              {p.type === "stock" && (
+                <button onClick={() => setItems((prev) => prev.map((x) => (x.id === p.id ? { ...x, stockQty: (x.stockQty ?? 0) + 1 } : x)))}
+                  className="rounded-lg border border-white/20 px-3 py-1.5 cursor-pointer" aria-label={`Restock ${p.name}`}>+1</button>
+              )}
+              {!p.isSample && (
+                <button onClick={() => setItems((prev) => prev.filter((x) => x.id !== p.id))}
+                  className="rounded-lg border border-red-400/40 px-3 py-1.5 cursor-pointer" aria-label={`Delete ${p.name}`}>Delete</button>
+              )}
+            </div>
+            {editing === p.id && (
+              <div className="mt-2">
+                <ProductEditor p={p}
+                  onSave={(np) => { setItems((prev) => prev.map((x) => (x.id === p.id ? np : x))); setEditing(null); }}
+                  onCancel={() => setEditing(null)} />
+              </div>
             )}
           </div>
         ))}

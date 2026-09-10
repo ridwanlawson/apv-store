@@ -3,7 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
 import { motion } from "motion/react";
-import { getBrand } from "@/brands";
+import { useBrand } from "@/lib/brand-store";
 import { useVisibleProducts } from "@/lib/store";
 import { useT } from "@/lib/i18n";
 import { Reveal } from "@/components/Reveal";
@@ -13,7 +13,7 @@ import { ScrollSequence } from "@/components/ScrollSequence";
 import type { Product } from "@/lib/products";
 
 export default function Home() {
-  const b = getBrand();
+  const b = useBrand();
   const t = useT();
   const [quick, setQuick] = useState<Product | null>(null);
   const visible = useVisibleProducts();

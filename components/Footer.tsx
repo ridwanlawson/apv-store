@@ -1,10 +1,10 @@
 "use client";
 import Image from "next/image";
-import { getBrand } from "@/brands";
+import { useBrand } from "@/lib/brand-store";
 import { useT } from "@/lib/i18n";
 
 export function Footer() {
-  const b = getBrand();
+  const b = useBrand();
   const t = useT();
   return (
     <footer className="mt-20 border-t border-white/10 px-4 py-10 text-sm opacity-70">

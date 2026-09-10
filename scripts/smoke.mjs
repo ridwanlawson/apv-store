@@ -41,6 +41,10 @@ assert.ok(read("lib/currency.tsx").includes("IDR") && layout.includes("CurrencyP
 assert.ok(read("app/shop/page.tsx").includes("aria-pressed"), "shop filter missing");
 assert.ok(read("lib/auth.tsx").includes("magiclink") && read("app/admin/page.tsx").includes("useAuth"), "auth missing");
 assert.ok(read("lib/auth.tsx").includes("access_token"), "magic-link hash handling missing");
+assert.ok(read("lib/brand-store.ts").includes("saveBrand"), "brand store missing");
+assert.ok(existsSync(join(root, "components/admin/BrandForm.tsx")), "brand form missing");
+assert.ok(existsSync(join(root, "components/admin/ProductEditor.tsx")), "product editor missing");
+assert.ok(read("components/Navbar.tsx").includes("useBrand"), "navbar brand wiring missing");
 
 // 7. Size guide: data + UI terpasang di PDP, quick-view, footer
 assert.ok(read("lib/sizeguide.ts").includes("recommendTop"), "size data missing");
