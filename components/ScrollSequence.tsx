@@ -149,7 +149,7 @@ export function ScrollSequence({
         <canvas ref={canvasRef} className="w-full flex-1 drop-shadow-[0_24px_45px_rgba(0,0,0,0.35)]" aria-label={`Product view ${frame} of ${frames}`} role="img" />
 
         {/* headline overlay: panel frosted rapi kiri-atas, fade saat scroll */}
-        <div className="pointer-events-none absolute inset-x-0 top-16 px-4 pt-4 transition-opacity sm:pt-6" style={{ opacity: heroOpacity }} aria-hidden={heroOpacity === 0}>
+        <div className="pointer-events-none absolute inset-x-0 top-[100px] px-4 pt-2 transition-opacity sm:top-16 sm:pt-6" style={{ opacity: heroOpacity }} aria-hidden={heroOpacity === 0}>
           <div className="mr-auto w-fit max-w-xl rounded-2xl border border-black/10 bg-[#EDEAE4]/85 p-4 text-left shadow-[0_8px_30px_rgba(0,0,0,0.12)] backdrop-blur-md sm:ml-[4vw] sm:p-6">
             <p className="mb-2 inline-block rounded-full bg-black px-3 py-1 text-[11px] font-bold tracking-[0.22em] text-[#EDEAE4]">{t("seqBadge")}</p>
             <h1 className="font-display text-4xl leading-[1.02] tracking-tight sm:text-6xl">{headline}</h1>
