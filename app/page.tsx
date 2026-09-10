@@ -5,6 +5,7 @@ import { useState } from "react";
 import { motion } from "motion/react";
 import { getBrand } from "@/brands";
 import { useVisibleProducts } from "@/lib/store";
+import { useT } from "@/lib/i18n";
 import { Reveal } from "@/components/Reveal";
 import { ProductCard } from "@/components/ProductCard";
 import { ProductModal } from "@/components/ProductModal";
@@ -13,6 +14,7 @@ import type { Product } from "@/lib/products";
 
 export default function Home() {
   const b = getBrand();
+  const t = useT();
   const [quick, setQuick] = useState<Product | null>(null);
   const visible = useVisibleProducts();
   const drop = visible.slice(0, 6);
@@ -20,28 +22,17 @@ export default function Home() {
 
   return (
     <main>
-      {/* HERO fullscreen */}
-      <section className="relative flex min-h-[92vh] items-end overflow-hidden">
-        <Image src={b.hero.poster} alt={`${b.name} hero`} fill priority className="kenburns object-cover opacity-60" sizes="100vw" />
-        <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-black/20" />
-        <div className="relative mx-auto w-full max-w-6xl px-4 pb-16">
-          <Reveal>
-            <p className="mb-3 inline-block rounded-full border border-white/20 bg-black/50 px-3 py-1 text-xs tracking-[0.2em]">WORLDWIDE DROP 001</p>
-            <h1 className="font-display text-[13vw] leading-[0.9] tracking-tight sm:text-7xl">{b.hero.headline}</h1>
-            <p className="mt-3 max-w-xl text-base opacity-80 sm:text-lg">{b.hero.sub}</p>
-            <div className="mt-6 flex gap-3">
-              <Link href="/shop" className="rounded-xl bg-white px-6 py-3.5 font-bold text-black hover:opacity-90">{b.hero.cta}</Link>
-              <a href="#spin" className="rounded-xl border border-white/30 px-6 py-3.5 hover:bg-white/10">See it in 3D ↓</a>
-            </div>
-          </Reveal>
-        </div>
-      </section>
-
-      {/* SCROLL-3D (panggung terang, frame dari config brand) */}
-      {b.sequence && (
-        <div id="spin">
-          <ScrollSequence seq={b.sequence} frames={240} />
-        </div>
+      {/* SCROLL-3D fullscreen paling atas (frame dari config brand) */}
+      {b.sequence ? (
+        <ScrollSequence seq={b.sequence} frames={120} ext="webp" headline={b.hero.headline} sub={b.hero.sub} />
+      ) : (
+        <section className="flex min-h-[92vh] items-end px-4 pb-16 pt-24">
+          <div className="mx-auto w-full max-w-6xl">
+            <h1 className="font-display text-[13vw] leading-[0.9] sm:text-7xl">{b.hero.headline}</h1>
+            <p className="mt-3 max-w-xl opacity-80">{b.hero.sub}</p>
+            <Link href="/shop" className="mt-6 inline-block rounded-xl bg-white px-6 py-3.5 font-bold text-black">{b.hero.cta}</Link>
+          </div>
+        </section>
       )}
 
       {/* MARQUEE */}
@@ -57,10 +48,10 @@ export default function Home() {
       <section className="mx-auto max-w-6xl px-4 py-16" aria-label="Latest drop">
         <Reveal className="mb-6 flex items-end justify-between">
           <div>
-            <h2 className="font-display text-4xl">LATEST DROP</h2>
-            <p className="opacity-60">Swipe sideways. Click a piece for quick view.</p>
+            <h2 className="font-display text-4xl">{t("dropTitle")}</h2>
+            <p className="opacity-60">{t("dropSub")}</p>
           </div>
-          <Link href="/shop" className="text-sm underline underline-offset-4">View all</Link>
+          <Link href="/shop" className="text-sm underline underline-offset-4">{t("viewAll")}</Link>
         </Reveal>
         <div className="no-scrollbar -mx-4 flex snap-x snap-mandatory gap-4 overflow-x-auto px-4 pb-2">
           {drop.map((p) => (
@@ -80,18 +71,18 @@ export default function Home() {
         </div>
         <div className="flex flex-col gap-10">
           {[
-            ["01 / HEAVY FABRIC", "240–400 GSM. No see-through, no shrink excuses. Wash-cold, hang-dry."],
-            ["02 / TRUE FIT", "Model 178cm wears M. Size chart US/EU/Asia in cm+inch on every product."],
-            ["03 / SHIPPED WORLDWIDE", "POD ships from US/EU hubs. Limited pieces fly from Indonesia. Track everything."],
-          ].map(([t, d]) => (
-            <Reveal key={t}>
-              <h3 className="font-display text-3xl">{t}</h3>
-              <p className="mt-2 opacity-70">{d}</p>
+            [t("storyT1"), t("storyD1")],
+            [t("storyT2"), t("storyD2")],
+            [t("storyT3"), t("storyD3")],
+          ].map(([title, desc]) => (
+            <Reveal key={title}>
+              <h3 className="font-display text-3xl">{title}</h3>
+              <p className="mt-2 opacity-70">{desc}</p>
             </Reveal>
           ))}
           <Reveal>
             <motion.div whileHover={{ scale: 1.02 }} className="rounded-2xl p-[1px]" style={{ background: "linear-gradient(135deg,#C1121F,#5b0b12)" }}>
-              <Link href="/shop" className="block rounded-2xl bg-black px-6 py-5 text-center font-bold">Shop best sellers →</Link>
+              <Link href="/shop" className="block rounded-2xl bg-black px-6 py-5 text-center font-bold">{t("storyCta")}</Link>
             </motion.div>
           </Reveal>
         </div>

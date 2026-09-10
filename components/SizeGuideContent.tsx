@@ -1,14 +1,15 @@
 "use client";
 import { useState } from "react";
 import { guides, fmt, recommendTop, recommendBottom, type GuideCategory, type Unit } from "@/lib/sizeguide";
-
-const tabs: { id: GuideCategory; label: string }[] = [
-  { id: "tops", label: "Tops" },
-  { id: "bottoms", label: "Bottoms" },
-  { id: "caps", label: "Caps" },
-];
+import { useT } from "@/lib/i18n";
 
 export function SizeGuideContent({ initial = "tops" }: { initial?: GuideCategory }) {
+  const t = useT();
+  const tabs: { id: GuideCategory; label: string }[] = [
+    { id: "tops", label: t("sgTabT") },
+    { id: "bottoms", label: t("sgTabB") },
+    { id: "caps", label: t("sgTabC") },
+  ];
   const [cat, setCat] = useState<GuideCategory>(initial);
   const [unit, setUnit] = useState<Unit>("cm");
   const [chest, setChest] = useState("");
@@ -23,10 +24,10 @@ export function SizeGuideContent({ initial = "tops" }: { initial?: GuideCategory
       {/* Tabs + unit */}
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex gap-2" role="tablist" aria-label="Category">
-          {tabs.map((t) => (
-            <button key={t.id} role="tab" aria-selected={cat === t.id} onClick={() => setCat(t.id)}
-              className={`min-h-[40px] rounded-full border px-4 text-sm cursor-pointer ${cat === t.id ? "border-white bg-white font-bold text-black" : "border-white/20"}`}>
-              {t.label}
+          {tabs.map((tab) => (
+            <button key={tab.id} role="tab" aria-selected={cat === tab.id} onClick={() => setCat(tab.id)}
+              className={`min-h-[40px] rounded-full border px-4 text-sm cursor-pointer ${cat === tab.id ? "border-white bg-white font-bold text-black" : "border-white/20"}`}>
+              {tab.label}
             </button>
           ))}
         </div>
@@ -43,7 +44,7 @@ export function SizeGuideContent({ initial = "tops" }: { initial?: GuideCategory
         <table className="w-full min-w-[420px] text-sm">
           <thead>
             <tr className="bg-white/5 text-left">
-              <th className="px-4 py-3 font-semibold">Size</th>
+              <th className="px-4 py-3 font-semibold">{t("sgSize")}</th>
               {g.measures.map((m) => (
                 <th key={m.key} className="px-4 py-3 font-semibold" title={m.hint}>{m.label} <span className="font-normal opacity-50">({unit})</span></th>
               ))}
@@ -61,40 +62,40 @@ export function SizeGuideContent({ initial = "tops" }: { initial?: GuideCategory
           </tbody>
         </table>
       </div>
-      <p className="mt-2 text-xs opacity-50">Garment measured flat then doubled where relevant. Between sizes? Size up.</p>
+      <p className="mt-2 text-xs opacity-50">{t("sgBetween")}</p>
 
       {/* How to measure */}
-      <h3 className="mt-6 font-bold">How to measure (30 seconds)</h3>
+      <h3 className="mt-6 font-bold">{t("sgHow")}</h3>
       <ol className="mt-2 flex list-decimal flex-col gap-1.5 pl-5 text-sm opacity-80">
-        <li><b>Chest/waist:</b> wrap the tape around, snug but 2 fingers loose. Breathe normally.</li>
-        <li><b>Length/inseam:</b> measure a piece you already love and compare to the table.</li>
-        <li><b>Caps:</b> tape above eyebrows; strap adjusts ±2 cm.</li>
+        <li>{t("sgS1")}</li>
+        <li>{t("sgS2")}</li>
+        <li>{t("sgS3")}</li>
       </ol>
 
       {/* Fit finder */}
-      <h3 className="mt-6 font-bold">Fit finder</h3>
+      <h3 className="mt-6 font-bold">{t("sgFinder")}</h3>
       <div className="mt-2 grid gap-2 sm:grid-cols-[1fr_1fr_1fr_auto]">
-        <label className="text-xs opacity-70">Chest (cm)
+        <label className="text-xs opacity-70">{t("sgChest")}
           <input value={chest} onChange={(e) => setChest(e.target.value)} inputMode="decimal" placeholder="e.g. 100"
             className="mt-1 w-full rounded-lg border border-white/15 bg-white/5 px-3 py-2.5 text-sm text-white outline-none focus:border-white/50" />
         </label>
-        <label className="text-xs opacity-70">Waist (cm)
+        <label className="text-xs opacity-70">{t("sgWaist")}
           <input value={waist} onChange={(e) => setWaist(e.target.value)} inputMode="decimal" placeholder="e.g. 80"
             className="mt-1 w-full rounded-lg border border-white/15 bg-white/5 px-3 py-2.5 text-sm text-white outline-none focus:border-white/50" />
         </label>
-        <label className="text-xs opacity-70">Fit
+        <label className="text-xs opacity-70">{t("sgFit")}
           <select value={fit} onChange={(e) => setFit(e.target.value as typeof fit)}
             className="mt-1 w-full rounded-lg border border-white/15 bg-black px-3 py-2.5 text-sm">
-            <option value="slim">Slim</option>
-            <option value="regular">Regular</option>
-            <option value="oversized">Oversized</option>
+            <option value="slim">{t("sgSlim")}</option>
+            <option value="regular">{t("sgReg")}</option>
+            <option value="oversized">{t("sgOver")}</option>
           </select>
         </label>
         <div className="self-end pb-0.5 text-sm font-bold" aria-live="polite">
-          {chest && (topRec ? `Tops: ${topRec}` : "Tops: —")} {waist && (botRec ? `· Bottoms: ${botRec}` : "· Bottoms: —")}
+          {chest && (topRec ? `${t("sgTabT")}: ${topRec}` : `${t("sgTabT")}: —`)} {waist && (botRec ? `· ${t("sgTabB")}: ${botRec}` : `· ${t("sgTabB")}: —`)}
         </div>
       </div>
-      <p className="mt-3 text-xs opacity-50">Model 178 cm / 70 kg wears M. Fits true to size.</p>
+      <p className="mt-3 text-xs opacity-50">{t("sgModel")}</p>
     </div>
   );
 }
