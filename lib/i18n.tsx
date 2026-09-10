@@ -229,7 +229,7 @@ export function LangSelector() {
       value={mounted ? ctx.lang : "en"}
       onChange={(e) => ctx.setLang(e.target.value as Lang)}
       aria-label="Language"
-      className="cursor-pointer rounded-full border border-white/20 bg-transparent px-2 py-1.5 text-xs"
+      className="cursor-pointer rounded-full border border-white/20 bg-transparent px-1.5 py-1.5 text-[11px] sm:px-2 sm:text-xs"
     >
       <option value="en" className="bg-black">EN</option>
       <option value="id" className="bg-black">ID</option>

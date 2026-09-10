@@ -19,9 +19,9 @@ export function Navbar({ brandName, accent, logo }: { brandName: string; accent:
         </div>
         <Link href="/" aria-label={brandName} className="absolute left-1/2 -translate-x-1/2 transition-transform duration-300 hover:scale-105">
           {logo ? (
-            <Image src={logo} alt={`${brandName} emblem`} width={96} height={48} className="h-10 w-auto" priority />
+            <Image src={logo} alt={`${brandName} emblem`} width={96} height={48} className="h-8 w-auto sm:h-10" priority />
           ) : (
-            <span className="font-display text-lg tracking-widest" style={{ color: "var(--brand-fg)" }}>
+            <span className="font-display text-base tracking-widest sm:text-lg" style={{ color: "var(--brand-fg)" }}>
               {brandName.toUpperCase()}
             </span>
           )}
@@ -30,7 +30,7 @@ export function Navbar({ brandName, accent, logo }: { brandName: string; accent:
           <LangSelector />
           <CurrencySelector />
           {/* suppressHydrationWarning: count cart dari localStorage hanya ada di client */}
-          <Link href="/cart" aria-label={`${t("navCart")}, ${count} items`} suppressHydrationWarning className="rounded-full px-3 py-1.5 font-semibold text-black" style={{ background: accent }}>
+          <Link href="/cart" aria-label={`${t("navCart")}, ${count} items`} suppressHydrationWarning className="rounded-full px-2 py-1.5 text-xs font-semibold text-black sm:px-3 sm:text-sm" style={{ background: accent }}>
             <span suppressHydrationWarning>{t("navCart")} · {count}</span>
           </Link>
         </div>
