@@ -70,7 +70,7 @@ export function CurrencySelector() {
       value={mounted ? ctx.cur : "USD"}
       onChange={(e) => ctx.setCur(e.target.value as Currency)}
       aria-label="Currency"
-      className="cursor-pointer rounded-full border border-white/20 bg-transparent px-2 py-1.5 text-xs"
+      className="cursor-pointer rounded-full border border-white/20 bg-transparent px-1.5 py-1.5 text-[11px] sm:px-2 sm:text-xs"
     >
       {(Object.keys(RATES) as Currency[]).map((c) => (
         <option key={c} value={c} className="bg-black">{c}</option>

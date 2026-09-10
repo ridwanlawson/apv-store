@@ -111,7 +111,7 @@ export function ScrollSequence({
 
   if (reduced) {
     return (
-      <section aria-label="Product spin" className="px-4 pb-16 pt-24">
+      <section aria-label="Product spin" className="px-4 pb-16 pt-24" style={{ background: "#EDEAE4", color: "#111" }}>
         <div className="mx-auto max-w-4xl text-center">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={`/seq/${seq}/${pad(1)}.${ext}`} alt="Tee front view" className="mx-auto rounded-2xl" loading="lazy" />
@@ -124,11 +124,11 @@ export function ScrollSequence({
   }
 
   return (
-    <section ref={wrapRef} aria-label="Scroll to rotate product" className="relative" style={{ height: "340vh" }}>
-      <div className="sticky top-0 flex h-screen flex-col overflow-hidden pt-16">
-        {/* glow companions for transparent frames */}
-        <div className="pointer-events-none absolute left-1/2 top-1/3 -z-0 h-[60vmin] w-[60vmin] -translate-x-1/2 rounded-full bg-white/[0.04] blur-3xl" />
-        <div className="h-1 w-full shrink-0 bg-white/10">
+    <section ref={wrapRef} aria-label="Scroll to rotate product" className="relative" style={{ height: "340vh", background: "#EDEAE4", color: "#111" }}>
+      <div className="sticky top-0 flex h-screen flex-col overflow-hidden pt-16 supports-[height:100svh]:h-[100svh]">
+        {/* studio sweep: pool bayangan lembut agar kaos hitam terbaca */}
+        <div className="pointer-events-none absolute left-1/2 top-[16%] h-[62vmin] w-[86vmin] max-w-[720px] -translate-x-1/2 rounded-[50%] bg-black/[0.07] blur-2xl" />
+        <div className="h-1 w-full shrink-0 bg-black/10">
           <div className="h-full bg-[#C1121F] transition-[width]" style={{ width: `${Math.round(progress * 100)}%` }} />
         </div>
         {/* poster behind canvas until first draw */}
@@ -137,18 +137,18 @@ export function ScrollSequence({
           <img src={`/seq/${seq}/${pad(1)}.${ext}`} alt="" aria-hidden
             className="pointer-events-none absolute inset-0 m-auto max-h-full max-w-full object-contain" />
         )}
-        <canvas ref={canvasRef} className="w-full flex-1" aria-label={`Product view ${frame} of ${frames}`} role="img" />
+        <canvas ref={canvasRef} className="w-full flex-1 drop-shadow-[0_24px_45px_rgba(0,0,0,0.35)]" aria-label={`Product view ${frame} of ${frames}`} role="img" />
 
         {/* headline overlay (fades as scroll starts) */}
-        <div className="pointer-events-none absolute inset-x-0 top-16 px-4 pt-6 text-center transition-opacity" style={{ opacity: heroOpacity }} aria-hidden={heroOpacity === 0}>
-          <p className="mb-2 inline-block rounded-full border border-white/20 bg-black/50 px-3 py-1 text-[11px] tracking-[0.25em]">{t("seqBadge")}</p>
-          <h1 className="mx-auto max-w-4xl font-display text-[13vw] leading-[0.9] sm:text-7xl">{headline}</h1>
-          <p className="mx-auto mt-2 max-w-xl text-sm opacity-70 sm:text-base">{sub}</p>
+        <div className="pointer-events-none absolute inset-x-0 top-16 px-4 pt-4 text-center transition-opacity sm:pt-6" style={{ opacity: heroOpacity }} aria-hidden={heroOpacity === 0}>
+          <p className="mb-2 inline-block rounded-full border border-black/25 bg-black/5 px-3 py-1 text-[11px] tracking-[0.25em]">{t("seqBadge")}</p>
+          <h1 className="mx-auto max-w-4xl font-display text-[12vw] leading-[0.9] sm:text-7xl">{headline}</h1>
+          <p className="mx-auto mt-2 hidden max-w-xl text-sm opacity-70 sm:block sm:text-base">{sub}</p>
         </div>
 
         {/* step info card */}
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 flex justify-center px-4 pb-8 sm:justify-start sm:pl-[8vw]" aria-live="polite">
-          <div key={step} className="w-full max-w-md rounded-2xl border border-white/15 bg-black/70 p-5 backdrop-blur">
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 flex justify-center px-4 pb-5 sm:justify-start sm:pb-8 sm:pl-[8vw]" aria-live="polite">
+          <div key={step} className="w-full max-w-md rounded-2xl border border-black/20 bg-[#141210]/95 p-4 text-[#EDEAE4] backdrop-blur sm:p-5">
             <p className="text-xs font-bold tracking-[0.3em] text-[#C1121F]">0{step + 1} — {titles[step]}</p>
             <p className="mt-1 font-display text-2xl tracking-wide">{titles[step]}</p>
             <p className="mt-1 text-sm opacity-70">{descs[step]}</p>
