@@ -37,7 +37,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           <LangProvider>
           <SmoothScroll>
             <Navbar brandName={b.name} accent={b.colors.accent} logo={b.logo} />
-            <div className="pt-16">{children}</div>
+            <div className="pt-[100px] sm:pt-16">{children}</div>
             <Footer />
             <CookieConsent />
           </SmoothScroll>
