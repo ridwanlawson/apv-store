@@ -11,11 +11,11 @@ export function Navbar({ brandName, accent, logo }: { brandName: string; accent:
   const t = useT();
   return (
     <header className="fixed inset-x-0 top-0 z-40 border-b border-white/10 bg-black/70 backdrop-blur">
-      <nav className="relative mx-auto flex h-16 max-w-6xl items-center justify-between px-4" aria-label="Main">
-        <div className="flex flex-1 items-center gap-3 text-sm">
-          <Link href="/shop" className="hover:opacity-80">{t("navShop")}</Link>
-          <Link href="/lookbook" className="hidden hover:opacity-80 md:inline">{t("navLook")}</Link>
-          <Link href="/track-order" className="hidden hover:opacity-80 md:inline">{t("navTrack")}</Link>
+      <nav className="relative mx-auto flex h-16 max-w-6xl items-center justify-between gap-2 px-4" aria-label="Main">
+        <div className="flex flex-1 items-center gap-5 text-sm tracking-wide">
+          <Link href="/shop" className="py-2 hover:opacity-80">{t("navShop")}</Link>
+          <Link href="/lookbook" className="hidden py-2 hover:opacity-80 md:inline">{t("navLook")}</Link>
+          <Link href="/track-order" className="hidden py-2 hover:opacity-80 md:inline">{t("navTrack")}</Link>
         </div>
         <Link href="/" aria-label={brandName} className="absolute left-1/2 -translate-x-1/2 transition-transform duration-300 hover:scale-105">
           {logo ? (
@@ -26,9 +26,9 @@ export function Navbar({ brandName, accent, logo }: { brandName: string; accent:
             </span>
           )}
         </Link>
-        <div className="flex flex-1 items-center justify-end gap-2 text-sm">
+        <div className="flex flex-1 items-center justify-end gap-2 sm:gap-3">
           <LangSelector />
-          <CurrencySelector />
+          <span className="hidden sm:inline"><CurrencySelector /></span>
           {/* suppressHydrationWarning: count cart dari localStorage hanya ada di client */}
           <Link href="/cart" aria-label={`${t("navCart")}, ${count} items`} suppressHydrationWarning className="rounded-full px-2 py-1.5 text-xs font-semibold text-black sm:px-3 sm:text-sm" style={{ background: accent }}>
             <span suppressHydrationWarning>{t("navCart")} · {count}</span>
