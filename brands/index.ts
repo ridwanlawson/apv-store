@@ -1,5 +1,7 @@
 import { aPrivateViolence, type BrandConfig } from "./a-private-violence";
 
+export type { BrandConfig };
+
 const registry: Record<string, BrandConfig> = {
   "a-private-violence": aPrivateViolence,
 };

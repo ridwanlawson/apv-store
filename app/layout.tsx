@@ -6,6 +6,7 @@ import { CartProvider } from "@/lib/cart";
 import SmoothScroll from "@/components/SmoothScroll";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
+import { ApplyBrandTheme } from "@/components/ApplyBrandTheme";
 import { CookieConsent } from "@/components/CookieConsent";
 import { CurrencyProvider } from "@/lib/currency";
 import { AuthProvider } from "@/lib/auth";
@@ -36,7 +37,8 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           <AuthProvider>
           <LangProvider>
           <SmoothScroll>
-            <Navbar brandName={b.name} accent={b.colors.accent} logo={b.logo} />
+            <ApplyBrandTheme />
+            <Navbar />
             <div className="pt-[100px] sm:pt-16">{children}</div>
             <Footer />
             <CookieConsent />

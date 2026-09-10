@@ -4,18 +4,22 @@ import Link from "next/link";
 import { useCart } from "@/lib/cart";
 import { CurrencySelector } from "@/lib/currency";
 import { LangSelector, useT } from "@/lib/i18n";
+import { useBrand } from "@/lib/brand-store";
 
 // Navbar: desktop 1 baris 3 zona (emblem tengah) · mobile 2 baris, semua menu tampil.
-export function Navbar({ brandName, accent, logo }: { brandName: string; accent: string; logo?: string }) {
+// Brand dibaca dari store (bisa diubah via /admin tanpa coding).
+export function Navbar() {
   const { count } = useCart();
   const t = useT();
+  const b = useBrand();
+  const accent = b.colors.accent;
   const emblem = (
-    <Link href="/" aria-label={brandName} className="transition-transform duration-300 hover:scale-105">
-      {logo ? (
-        <Image src={logo} alt={`${brandName} emblem`} width={96} height={48} className="h-8 w-auto sm:h-10" priority />
+    <Link href="/" aria-label={b.name} className="transition-transform duration-300 hover:scale-105">
+      {b.logo ? (
+        <Image src={b.logo} alt={`${b.name} emblem`} width={96} height={48} className="h-8 w-auto sm:h-10" priority />
       ) : (
         <span className="font-display text-base tracking-widest sm:text-lg" style={{ color: "var(--brand-fg)" }}>
-          {brandName.toUpperCase()}
+          {b.name.toUpperCase()}
         </span>
       )}
     </Link>
