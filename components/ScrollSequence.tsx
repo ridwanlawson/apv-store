@@ -24,6 +24,7 @@ export function ScrollSequence({
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [progress, setProgress] = useState(0);
   const [drawn, setDrawn] = useState(false);
+  const [wide, setWide] = useState(false);
   const [reduced] = useState(() =>
     typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches
   );
@@ -55,9 +56,13 @@ export function ScrollSequence({
     return () => { stop = true; clearTimeout(timer); };
   }, [seq, frames, ext]);
 
-  // Progress scroll -> state (rAF throttle).
+  // Progress scroll -> state (rAF throttle) + breakpoint desktop/mobile.
   useEffect(() => {
     if (reduced) return;
+    const mq = window.matchMedia("(min-width: 768px)");
+    const updWide = () => setWide(mq.matches);
+    updWide();
+    mq.addEventListener("change", updWide);
     let ticking = false;
     const onScroll = () => {
       if (ticking) return;
@@ -73,7 +78,10 @@ export function ScrollSequence({
     };
     onScroll();
     window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      mq.removeEventListener("change", updWide);
+    };
   }, [reduced]);
 
   // Gambar frame ke canvas (contain, dpr cap 1.5).
@@ -81,6 +89,7 @@ export function ScrollSequence({
     if (reduced) return;
     const canvas = canvasRef.current;
     if (!canvas) return;
+    const drawW = wide;
     const cached = cacheRef.current.get(frame);
     const img = cached ?? new Image();
     if (!cached) {
@@ -94,8 +103,10 @@ export function ScrollSequence({
       canvas.height = Math.max(1, Math.round(box.height * dpr));
       const ctx = canvas.getContext("2d");
       if (!ctx || !img.naturalWidth) return;
-      // COVER fullscreen: tanpa band kosong, crop sisi transparan bila perlu.
-      const s = Math.max(canvas.width / img.width, canvas.height / img.height);
+      // Desktop (landscape): contain — baju utuh. Mobile (portrait): cover — fullscreen.
+      const s = drawW
+        ? Math.min(canvas.width / img.width, canvas.height / img.height)
+        : Math.max(canvas.width / img.width, canvas.height / img.height);
       const w = img.width * s, h = img.height * s;
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       ctx.drawImage(img, (canvas.width - w) / 2, (canvas.height - h) / 2, w, h);
@@ -103,7 +114,7 @@ export function ScrollSequence({
     };
     if (img.complete && img.naturalWidth) draw();
     else img.onload = draw;
-  }, [frame, seq, ext, reduced]);
+  }, [frame, seq, ext, reduced, wide]);
 
   const step = progress < 0.3 ? 0 : progress < 0.68 ? 1 : 2;
   const titles = [t("step1t"), t("step2t"), t("step3t")];
@@ -133,15 +144,17 @@ export function ScrollSequence({
         {!drawn && (
           // eslint-disable-next-line @next/next/no-img-element
           <img src={`/seq/${seq}/${pad(1)}.${ext}`} alt="" aria-hidden
-            className="pointer-events-none absolute inset-0 h-full w-full object-cover" />
+            className="pointer-events-none absolute inset-0 h-full w-full object-cover md:object-contain" />
         )}
         <canvas ref={canvasRef} className="w-full flex-1 drop-shadow-[0_24px_45px_rgba(0,0,0,0.35)]" aria-label={`Product view ${frame} of ${frames}`} role="img" />
 
-        {/* headline overlay (fades as scroll starts) */}
-        <div className="pointer-events-none absolute inset-x-0 top-16 px-4 pt-4 text-center transition-opacity sm:pt-6" style={{ opacity: heroOpacity }} aria-hidden={heroOpacity === 0}>
-          <p className="mb-2 inline-block rounded-full border border-black bg-black/85 px-3 py-1 text-[11px] tracking-[0.25em] text-[#EDEAE4]">{t("seqBadge")}</p>
-          <h1 className="mx-auto max-w-4xl font-display text-[12vw] leading-[0.9] sm:text-7xl" style={{ textShadow: "0 0 22px rgba(237,234,228,0.9), 0 2px 8px rgba(237,234,228,0.65)" }}>{headline}</h1>
-          <p className="mx-auto mt-2 hidden max-w-xl text-sm font-semibold opacity-90 sm:block sm:text-base" style={{ textShadow: "0 0 14px rgba(237,234,228,0.9)" }}>{sub}</p>
+        {/* headline overlay: panel frosted rapi kiri-atas, fade saat scroll */}
+        <div className="pointer-events-none absolute inset-x-0 top-16 px-4 pt-4 transition-opacity sm:pt-6" style={{ opacity: heroOpacity }} aria-hidden={heroOpacity === 0}>
+          <div className="mr-auto w-fit max-w-xl rounded-2xl border border-black/10 bg-[#EDEAE4]/85 p-4 text-left shadow-[0_8px_30px_rgba(0,0,0,0.12)] backdrop-blur-md sm:ml-[4vw] sm:p-6">
+            <p className="mb-2 inline-block rounded-full bg-black px-3 py-1 text-[11px] font-bold tracking-[0.22em] text-[#EDEAE4]">{t("seqBadge")}</p>
+            <h1 className="font-display text-4xl leading-[1.02] tracking-tight sm:text-6xl">{headline}</h1>
+            <p className="mt-2 hidden max-w-md text-sm leading-relaxed opacity-75 sm:block">{sub}</p>
+          </div>
         </div>
 
         {/* step info card */}
