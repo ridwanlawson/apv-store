@@ -94,7 +94,8 @@ export function ScrollSequence({
       canvas.height = Math.max(1, Math.round(box.height * dpr));
       const ctx = canvas.getContext("2d");
       if (!ctx || !img.naturalWidth) return;
-      const s = Math.min(canvas.width / img.width, canvas.height / img.height);
+      // COVER fullscreen: tanpa band kosong, crop sisi transparan bila perlu.
+      const s = Math.max(canvas.width / img.width, canvas.height / img.height);
       const w = img.width * s, h = img.height * s;
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       ctx.drawImage(img, (canvas.width - w) / 2, (canvas.height - h) / 2, w, h);
@@ -125,17 +126,14 @@ export function ScrollSequence({
 
   return (
     <section ref={wrapRef} aria-label="Scroll to rotate product" className="relative" style={{ height: "340vh", background: "#EDEAE4", color: "#111" }}>
-      <div className="sticky top-0 flex h-screen flex-col overflow-hidden pt-16 supports-[height:100svh]:h-[100svh]">
+      <div className="sticky top-0 flex h-screen flex-col overflow-hidden supports-[height:100svh]:h-[100svh]">
         {/* studio sweep: pool bayangan lembut agar kaos hitam terbaca */}
         <div className="pointer-events-none absolute left-1/2 top-[16%] h-[62vmin] w-[86vmin] max-w-[720px] -translate-x-1/2 rounded-[50%] bg-black/[0.07] blur-2xl" />
-        <div className="h-1 w-full shrink-0 bg-black/10">
-          <div className="h-full bg-[#C1121F] transition-[width]" style={{ width: `${Math.round(progress * 100)}%` }} />
-        </div>
-        {/* poster behind canvas until first draw */}
+        {/* poster behind canvas until first draw — cover, tanpa band */}
         {!drawn && (
           // eslint-disable-next-line @next/next/no-img-element
           <img src={`/seq/${seq}/${pad(1)}.${ext}`} alt="" aria-hidden
-            className="pointer-events-none absolute inset-0 m-auto max-h-full max-w-full object-contain" />
+            className="pointer-events-none absolute inset-0 h-full w-full object-cover" />
         )}
         <canvas ref={canvasRef} className="w-full flex-1 drop-shadow-[0_24px_45px_rgba(0,0,0,0.35)]" aria-label={`Product view ${frame} of ${frames}`} role="img" />
 
@@ -163,6 +161,10 @@ export function ScrollSequence({
               </Link>
             )}
           </div>
+        </div>
+        {/* progress di tepi bawah — selalu terlihat, tak makan space */}
+        <div className="absolute inset-x-0 bottom-0 h-1 bg-black/10">
+          <div className="h-full bg-[#C1121F] transition-[width]" style={{ width: `${Math.round(progress * 100)}%` }} />
         </div>
       </div>
     </section>
