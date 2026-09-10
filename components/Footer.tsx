@@ -1,4 +1,5 @@
 "use client";
+import Image from "next/image";
 import { getBrand } from "@/brands";
 import { useT } from "@/lib/i18n";
 
@@ -7,6 +8,11 @@ export function Footer() {
   const t = useT();
   return (
     <footer className="mt-20 border-t border-white/10 px-4 py-10 text-sm opacity-70">
+      {b.logoFull && (
+        <div className="mx-auto mb-6 max-w-6xl">
+          <Image src={b.logoFull} alt={`${b.name} lockup`} width={320} height={180} className="h-16 w-auto opacity-90" loading="lazy" />
+        </div>
+      )}
       <div className="mx-auto flex max-w-6xl flex-col gap-2 sm:flex-row sm:justify-between">
         <p>© {new Date().getFullYear()} {b.name} · {b.tagline}</p>
         <nav className="flex flex-wrap gap-4" aria-label="Policies">
