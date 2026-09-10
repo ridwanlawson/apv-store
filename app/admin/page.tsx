@@ -21,7 +21,8 @@ export default function Admin() {
   const orders = tab === "orders" && mounted ? listOrders() : [];
   const orderCount = mounted ? listOrders().length : 0;
 
-  if (!user) {
+  // Tunggu mount agar SSR/client sama (auth dibaca dari browser).
+  if (!mounted || !user) {
     return (
       <main className="mx-auto max-w-sm px-4 py-20">
         <h1 className="font-display text-3xl">ADMIN LOGIN</h1>
