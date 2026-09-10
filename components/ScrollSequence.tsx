@@ -139,9 +139,9 @@ export function ScrollSequence({
 
         {/* headline overlay (fades as scroll starts) */}
         <div className="pointer-events-none absolute inset-x-0 top-16 px-4 pt-4 text-center transition-opacity sm:pt-6" style={{ opacity: heroOpacity }} aria-hidden={heroOpacity === 0}>
-          <p className="mb-2 inline-block rounded-full border border-black/25 bg-black/5 px-3 py-1 text-[11px] tracking-[0.25em]">{t("seqBadge")}</p>
-          <h1 className="mx-auto max-w-4xl font-display text-[12vw] leading-[0.9] sm:text-7xl">{headline}</h1>
-          <p className="mx-auto mt-2 hidden max-w-xl text-sm opacity-70 sm:block sm:text-base">{sub}</p>
+          <p className="mb-2 inline-block rounded-full border border-black bg-black/85 px-3 py-1 text-[11px] tracking-[0.25em] text-[#EDEAE4]">{t("seqBadge")}</p>
+          <h1 className="mx-auto max-w-4xl font-display text-[12vw] leading-[0.9] sm:text-7xl" style={{ textShadow: "0 0 22px rgba(237,234,228,0.9), 0 2px 8px rgba(237,234,228,0.65)" }}>{headline}</h1>
+          <p className="mx-auto mt-2 hidden max-w-xl text-sm font-semibold opacity-90 sm:block sm:text-base" style={{ textShadow: "0 0 14px rgba(237,234,228,0.9)" }}>{sub}</p>
         </div>
 
         {/* step info card */}
