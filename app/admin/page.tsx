@@ -3,7 +3,40 @@ import { useEffect, useState } from "react";
 import { useProductStore, toCSV, useMounted, persistProduct, removeProduct } from "@/lib/store";
 import { useAuth } from "@/lib/auth";
 import { listOrders } from "@/lib/orders";
-import { fetchOrders, getSession, type DbOrderRow } from "@/lib/supabase";
+import { fetchOrders, getSession, probeDb, type DbHealth, type DbOrderRow } from "@/lib/supabase";
+
+/** Indikator koneksi DB + tombol test. Menyingkap silent failure ke user. */
+function DbBadge() {
+  const [health, setHealth] = useState<DbHealth | null>(null);
+  const [checking, setChecking] = useState(true);
+  useEffect(() => {
+    let live = true;
+    probeDb("a-private-violence")
+      .then((h) => { if (live) { setHealth(h); setChecking(false); } })
+      .catch(() => { if (live) { setHealth({ state: "offline" }); setChecking(false); } });
+    return () => { live = false; };
+  }, []);
+  const check = () => {
+    setChecking(true);
+    probeDb("a-private-violence")
+      .then((h) => { setHealth(h); setChecking(false); })
+      .catch(() => { setHealth({ state: "offline" }); setChecking(false); });
+  };
+  const label =
+    !health || health.state === "no-session" ? "DB: lokal (login untuk live)" :
+    health.state === "connected" ? "DB: ● Supabase live" :
+    health.state === "denied" ? `DB: ditolak (${health.code}) — cek profiles role` :
+    "DB: offline (cek koneksi/env)";
+  const hot = health?.state === "connected";
+  return (
+    <p className="mt-1 flex items-center gap-2 text-xs">
+      <span className={hot ? "text-green-400" : "text-amber-300"}>{label}</span>
+      <button onClick={() => void check()} disabled={checking} className="underline opacity-70 cursor-pointer disabled:opacity-40">
+        {checking ? "…" : "Test"}
+      </button>
+    </p>
+  );
+}
 import { BrandForm } from "@/components/admin/BrandForm";
 import { ProductEditor } from "@/components/admin/ProductEditor";
 import type { Product } from "@/lib/products";
@@ -25,13 +58,13 @@ export default function Admin() {
   const mounted = useMounted();
   // Order DB bila login (server truth); kalau tidak -> lokal browser.
   useEffect(() => {
-    if (tab !== "orders" || !user || !mounted || !getSession()) {
-      setDbOrders(null);
-      return;
+    let live = true;
+    if (tab === "orders" && user && mounted && getSession()) {
+      fetchOrders("a-private-violence")
+        .then((r) => { if (live) setDbOrders(r ?? []); })
+        .catch(() => { if (live) setDbOrders(null); });
     }
-    fetchOrders("a-private-violence")
-      .then((r) => setDbOrders(r ?? []))
-      .catch(() => setDbOrders(null));
+    return () => { live = false; };
   }, [tab, user, mounted]);
   const orders = tab === "orders" && mounted ? listOrders() : [];
   const orderCount = dbOrders ? dbOrders.length : mounted ? listOrders().length : 0;
@@ -88,9 +121,10 @@ export default function Admin() {
   return (
     <main className="mx-auto max-w-4xl px-4 py-10">
       <p className="text-xs opacity-50">{user.email} · {user.role} · {mode} mode · <button onClick={logout} className="underline cursor-pointer">Logout</button></p>
+      <DbBadge />
       <div className="mt-2 flex gap-2" role="tablist" aria-label="Admin sections">
         {(["products", "orders", "brand"] as const).map((t) => (
-          <button key={t} role="tab" aria-selected={tab === t} onClick={() => setTab(t)}
+          <button key={t} role="tab" aria-selected={tab === t} onClick={() => { setTab(t); if (t !== "orders") setDbOrders(null); }}
             className={`rounded-full border px-4 py-1.5 text-sm capitalize cursor-pointer ${tab === t ? "border-white bg-white font-bold text-black" : "border-white/20"}`}>
             {t === "brand" ? "Tampilan" : t} {t === "orders" && `(${orderCount})`}
           </button>

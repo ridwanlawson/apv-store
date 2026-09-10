@@ -269,3 +269,25 @@ export async function fetchOrders(brandId: string): Promise<DbOrderRow[] | null>
     return null;
   }
 }
+
+export type DbHealth =
+  | { state: "no-session" }
+  | { state: "connected" }
+  | { state: "denied"; code: number }
+  | { state: "offline" };
+
+/** Probe tulis/baca DB untuk indikator admin. Tidak throw. */
+export async function probeDb(brandId: string): Promise<DbHealth> {
+  if (!supabaseConfigured()) return { state: "offline" };
+  if (!getSession()) return { state: "no-session" };
+  try {
+    const res = await rest(
+      `products?brand_id=eq.${encodeURIComponent(brandId)}&select=id&limit=1`
+    );
+    if (res.ok) return { state: "connected" };
+    if (res.status === 401 || res.status === 403) return { state: "denied", code: res.status };
+    return { state: "offline" };
+  } catch {
+    return { state: "offline" };
+  }
+}
