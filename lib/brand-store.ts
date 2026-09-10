@@ -4,6 +4,7 @@
 import { useEffect, useState } from "react";
 import { getBrand, type BrandConfig } from "@/brands";
 import { useMounted } from "./store";
+import { fetchBrand, saveBrandRow, getSession } from "./supabase";
 
 const KEY = "apv-brand-v1";
 
@@ -53,7 +54,7 @@ export function fileToDataUrl(file: File, maxSide = 512, quality = 0.85): Promis
   });
 }
 
-/** Brand gabungan (seed + override admin). Seed dipakai saat SSR/prerender. */
+/** Brand gabungan: seed < lokal < DB (server truth saat login). Seed dipakai saat SSR. */
 export function useBrand(): BrandConfig {
   const mounted = useMounted();
   const [override, setOverride] = useState<BrandOverride>(() =>
@@ -69,6 +70,17 @@ export function useBrand(): BrandConfig {
       window.removeEventListener("storage", refresh);
     };
   }, []);
+  // Sinkron dari DB sekali setelah mount bila ada sesi (admin login).
+  useEffect(() => {
+    if (!mounted || !getSession()) return;
+    const seed = getBrand();
+    fetchBrand(seed.id)
+      .then((db) => {
+        if (!db) return;
+        setOverride((prev) => ({ ...prev, name: db.name, ...(db.config as BrandOverride) }));
+      })
+      .catch(() => { /* offline / belum ada akses -> tetap lokal */ });
+  }, [mounted]);
   const seed = getBrand();
   if (!mounted) return seed;
   return {
@@ -79,14 +91,23 @@ export function useBrand(): BrandConfig {
   };
 }
 
-/** Simpan patch override (dipanggil dari /admin). */
-export function saveBrand(patch: BrandOverride) {
+/** Simpan patch override: ke DB bila login (server truth) + selalu ke lokal (backup).
+ * Butuh patch-002 + profiles role, kalau tidak -> throw dengan pesan jelas. */
+export async function saveBrand(patch: BrandOverride): Promise<void> {
   const next = { ...load(), ...patch };
   try {
     localStorage.setItem(KEY, JSON.stringify(next));
   } catch {
-    /* quota penuh -> user harus pakai URL, bukan upload */
-    throw new Error("Penyimpanan penuh — pakai URL gambar, bukan upload.");
+    throw new Error("Penyimpanan lokal penuh — pakai URL gambar, bukan upload.");
+  }
+  if (getSession()) {
+    const seed = getBrand();
+    const { name, ...config } = next;
+    try {
+      await saveBrandRow(seed.id, name ?? seed.name, config);
+    } catch {
+      throw new Error("Gagal simpan ke Supabase (cek profiles role / patch-002). Lokal tersimpan.");
+    }
   }
   try {
     window.dispatchEvent(new Event("apv-brand"));

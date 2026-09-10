@@ -45,6 +45,9 @@ assert.ok(read("lib/brand-store.ts").includes("saveBrand"), "brand store missing
 assert.ok(existsSync(join(root, "components/admin/BrandForm.tsx")), "brand form missing");
 assert.ok(existsSync(join(root, "components/admin/ProductEditor.tsx")), "product editor missing");
 assert.ok(read("components/Navbar.tsx").includes("useBrand"), "navbar brand wiring missing");
+assert.ok(existsSync(join(root, "supabase/patch-002-rbac.sql")), "patch-002 missing");
+assert.ok(read("lib/supabase.ts").includes("is_brand_admin") || read("lib/supabase.ts").includes("fetchAllProducts"), "supabase admin fns missing");
+assert.ok(read("lib/store.ts").includes("persistProduct"), "store persist missing");
 
 // 7. Size guide: data + UI terpasang di PDP, quick-view, footer
 assert.ok(read("lib/sizeguide.ts").includes("recommendTop"), "size data missing");
