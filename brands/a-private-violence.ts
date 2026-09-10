@@ -17,7 +17,9 @@ export interface BrandConfig {
   contact: string;
   socials: { instagram?: string; tiktok?: string };
   hero: { headline: string; sub: string; cta: string; poster: string };
-  logo?: string; // emblem tengah navbar, mis. /brands/a-private-violence/logo.png
+  logo?: string; // emblem tengah navbar, mis. /brands/a-private-violence/logo.webp
+  logoFull?: string; // lockup penuh untuk footer
+  favicon?: string; // default = logo
   sequence?: string; // folder di public/seq/<id>/ (scroll-3D), kosong = section disembunyikan
   seo: { title: string; description: string };
   shippingOrigin: string;
@@ -50,5 +52,8 @@ export const aPrivateViolence: BrandConfig = {
   },
   shippingOrigin: "ID",
   sequence: "tee-705",
+  logo: "/brands/a-private-violence/logo.webp",
+  logoFull: "/brands/a-private-violence/logo-full.webp",
+  favicon: "/brands/a-private-violence/favicon.png",
   paymentRefs: { stripePrefix: "apv" },
 };

@@ -19,7 +19,7 @@ export function generateMetadata(): Metadata {
   return {
     title: b.seo.title,
     description: b.seo.description,
-    icons: b.logo ? [{ rel: "icon", url: b.logo }] : undefined,
+    icons: (b.favicon ?? b.logo) ? [{ rel: "icon", url: (b.favicon ?? b.logo) as string }] : undefined,
   };
 }
 
