@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { products } from "@/lib/products";
-import { saveOrder, decrementStock, supabaseConfigured } from "@/lib/supabase";
+import { saveOrder, decrementStock, fetchPromo, supabaseConfigured } from "@/lib/supabase";
 
 // Mock checkout (payment HOLD). Hardened like production:
 // harga dihitung server, validasi ketat, rate-limit per IP,
@@ -121,9 +121,21 @@ export async function POST(req: Request) {
     }
   }
 
-  // 3. Catat order (idempotency_key unik di DB -> duplikat = dedupe).
+  // 3. Promo (opsional): persen dari subtotal, validasi server.
+  const promoRaw = (body as { promo?: unknown }).promo;
+  const promoCode = typeof promoRaw === "string" && promoRaw.trim() ? promoRaw.trim().toUpperCase().slice(0, 24) : null;
+  let discount = 0;
+  let promoPercent: number | null = null;
+  if (promoCode) {
+    const promo = await fetchPromo(promoCode);
+    if (!promo) return NextResponse.json({ error: "Invalid or expired code." }, { status: 400 });
+    promoPercent = promo.percent;
+    discount = Math.round((subtotal * promo.percent) / 100);
+  }
+
+  // 4. Catat order (idempotency_key unik di DB -> duplikat = dedupe).
   const ship = lane === "express" ? 32 : 14;
-  const total = subtotal + ship;
+  const total = subtotal - discount + ship;
   let finalId = orderId;
   try {
     finalId = await saveOrder(
@@ -150,5 +162,5 @@ export async function POST(req: Request) {
   }
   if (key) seen.set(key, { orderId: finalId, total, at: Date.now() });
   const wa = `https://wa.me/?text=${encodeURIComponent(`Order ${finalId} $${total} via ${lane} (${valid.length} items)`)}`;
-  return NextResponse.json({ orderId: finalId, total, url: `/success?order=${finalId}&wa=${encodeURIComponent(wa)}` });
+  return NextResponse.json({ orderId: finalId, total, discount, promoPercent, promoCode, url: `/success?order=${finalId}&wa=${encodeURIComponent(wa)}` });
 }

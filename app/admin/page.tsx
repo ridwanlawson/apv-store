@@ -1,11 +1,41 @@
 "use client";
 import { useEffect, useState } from "react";
-import { useProductStore, toCSV, useMounted, persistProduct, removeProduct } from "@/lib/store";
+import { useProductStore, toCSV, parseCSV, useMounted, persistProduct, removeProduct } from "@/lib/store";
 import { useAuth } from "@/lib/auth";
 import { listOrders } from "@/lib/orders";
 import { fetchOrders, getSession, probeDb, type DbHealth, type DbOrderRow } from "@/lib/supabase";
 
-/** Indikator koneksi DB + tombol test. Menyingkap silent failure ke user. */
+/** Strip statistik + stok menipis untuk CMS harian. */
+function StatsStrip() {
+  const { items } = useProductStore();
+  const [orders, setOrders] = useState<{ total: number }[] | null>(null);
+  useEffect(() => {
+    let live = true;
+    if (!getSession()) return;
+    fetchOrders("a-private-violence")
+      .then((r) => { if (live) setOrders((r ?? []).map((o) => ({ total: o.total_usd }))); })
+      .catch(() => { if (live) setOrders(null); });
+    return () => { live = false; };
+  }, []);
+  const local = listOrders();
+  const revenue = orders ? orders.reduce((a, o) => a + o.total, 0) : local.reduce((a, o) => a + o.total, 0);
+  const nOrders = orders ? orders.length : local.length;
+  const low = items.filter((p) => p.type === "stock" && p.published && (p.stockQty ?? 0) <= 5);
+  const card = "rounded-xl border border-white/10 p-3";
+  return (
+    <div className="mt-4 grid grid-cols-2 gap-2 text-sm sm:grid-cols-4">
+      <div className={card}><p className="opacity-50">Revenue ({orders ? "DB" : "lokal"})</p><p className="text-xl font-bold">${revenue}</p></div>
+      <div className={card}><p className="opacity-50">Orders</p><p className="text-xl font-bold">{nOrders}</p></div>
+      <div className={card}><p className="opacity-50">Published</p><p className="text-xl font-bold">{items.filter((i) => i.published).length}/{items.length}</p></div>
+      <div className={card}><p className="opacity-50">Stok menipis ≤5</p><p className="text-xl font-bold">{low.length}</p></div>
+      {low.length > 0 && (
+        <p className="col-span-2 text-xs text-amber-300 sm:col-span-4">
+          Restock: {low.map((p) => `${p.name} (${p.stockQty})`).join(", ")}
+        </p>
+      )}
+    </div>
+  );
+}
 function DbBadge() {
   const [health, setHealth] = useState<DbHealth | null>(null);
   const [checking, setChecking] = useState(true);
@@ -39,6 +69,8 @@ function DbBadge() {
 }
 import { BrandForm } from "@/components/admin/BrandForm";
 import { ProductEditor } from "@/components/admin/ProductEditor";
+import { PromoManager } from "@/components/admin/PromoManager";
+import { OrderCard } from "@/components/admin/OrderCard";
 import type { Product } from "@/lib/products";
 
 // Brand-admin: tambah/edit produk + stok via UI (persisten localStorage;
@@ -52,11 +84,21 @@ export default function Admin() {
   const [price, setPrice] = useState("45");
   const [type, setType] = useState<"pod" | "stock">("pod");
   const [stock, setStock] = useState("20");
-  const [tab, setTab] = useState<"products" | "orders" | "brand">("products");
+  const [tab, setTab] = useState<"products" | "orders" | "promo" | "brand">("products");
   const [editing, setEditing] = useState<string | null>(null);
+  const [csvMsg, setCsvMsg] = useState("");
   const [dbOrders, setDbOrders] = useState<DbOrderRow[] | null>(null);
   const mounted = useMounted();
   // Order DB bila login (server truth); kalau tidak -> lokal browser.
+  const loadDbOrders = () => {
+    if (!getSession()) {
+      setDbOrders(null);
+      return;
+    }
+    fetchOrders("a-private-violence")
+      .then((r) => setDbOrders(r ?? []))
+      .catch(() => setDbOrders(null));
+  };
   useEffect(() => {
     let live = true;
     if (tab === "orders" && user && mounted && getSession()) {
@@ -126,26 +168,25 @@ export default function Admin() {
     <main className="mx-auto max-w-4xl px-4 py-10">
       <p className="text-xs opacity-50">{user.email} · {user.role} · {mode} mode · <button onClick={logout} className="underline cursor-pointer">Logout</button></p>
       <DbBadge />
-      <div className="mt-2 flex gap-2" role="tablist" aria-label="Admin sections">
-        {(["products", "orders", "brand"] as const).map((t) => (
+      <div className="mt-2 flex flex-wrap gap-2" role="tablist" aria-label="Admin sections">
+        {(["products", "orders", "promo", "brand"] as const).map((t) => (
           <button key={t} role="tab" aria-selected={tab === t} onClick={() => { setTab(t); if (t !== "orders") setDbOrders(null); }}
             className={`rounded-full border px-4 py-1.5 text-sm capitalize cursor-pointer ${tab === t ? "border-white bg-white font-bold text-black" : "border-white/20"}`}>
-            {t === "brand" ? "Tampilan" : t} {t === "orders" && `(${orderCount})`}
+            {t === "brand" ? "Tampilan" : t === "promo" ? "Promo" : t} {t === "orders" && `(${orderCount})`}
           </button>
         ))}
       </div>
       {tab === "brand" ? (
         <div className="mt-6"><BrandForm /></div>
+      ) : tab === "promo" ? (
+        <PromoManager />
       ) : tab === "orders" ? (
         <div className="mt-6 flex flex-col gap-3">
           {dbOrders ? (
             <>
               {dbOrders.length === 0 && <p className="opacity-60">Belum ada order di Supabase.</p>}
               {dbOrders.map((o) => (
-                <div key={o.id} className="rounded-xl border border-white/10 p-4 text-sm">
-                  <p><b>{o.id.slice(0, 8)}…</b> <span className="opacity-50">· {o.email} · {o.lane} · ${o.total_usd} · {new Date(o.created_at).toLocaleString()}</span></p>
-                  <p className="mt-1 opacity-70">{o.items.map((i) => `${i.slug} ×${i.qty} (${i.size})`).join(", ")}</p>
-                </div>
+                <OrderCard key={o.id} o={o} onChanged={loadDbOrders} />
               ))}
               <p className="text-xs opacity-50">Live dari Supabase (semua device).</p>
             </>
@@ -164,9 +205,34 @@ export default function Admin() {
         </div>
       ) : (
       <>
-      <div className="mt-2 flex flex-wrap items-center justify-between gap-3">
+      <StatsStrip />
+      <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
         <h1 className="font-display text-3xl">PRODUCTS ({items.filter((i) => i.published).length})</h1>
-        <div className="flex gap-2 text-sm">
+        <div className="flex flex-wrap gap-2 text-sm">
+          <label className="cursor-pointer rounded-lg border border-white/20 px-3 py-2">
+            Import CSV
+            <input type="file" accept=".csv,text/csv" className="hidden"
+              onChange={(e) => {
+                const f = e.target.files?.[0];
+                if (!f) return;
+                const rd = new FileReader();
+                rd.onload = () => {
+                  const news = parseCSV(String(rd.result ?? ""), "a-private-violence");
+                  if (news.length === 0) { setCsvMsg("CSV kosong / format salah."); return; }
+                  setItems((prev) => [...news, ...prev]);
+                  news.forEach((p) => {
+                    persistProduct(p)
+                      .then((id) => {
+                        if (id !== p.id) setItems((prev) => prev.map((x) => (x.id === p.id ? { ...x, id } : x)));
+                      })
+                      .catch(() => {});
+                  });
+                  setCsvMsg(`+${news.length} produk (lengkapi foto via Edit).`);
+                };
+                rd.readAsText(f);
+                e.target.value = "";
+              }} />
+          </label>
           <button
             onClick={() => {
               const blob = new Blob([toCSV(items)], { type: "text/csv" });
@@ -186,6 +252,7 @@ export default function Admin() {
           }} className="rounded-lg border border-red-400/50 px-3 py-2 cursor-pointer">Purge samples</button>
         </div>
       </div>
+      {csvMsg && <p className="mt-2 text-sm opacity-70">{csvMsg}</p>}
 
       <div className="mt-6 rounded-xl border border-white/10 p-4">
         <p className="font-bold">+ Add product</p>
