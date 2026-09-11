@@ -48,7 +48,13 @@ assert.ok(read("components/Navbar.tsx").includes("useBrand"), "navbar brand wiri
 assert.ok(existsSync(join(root, "supabase/patch-002-rbac.sql")), "patch-002 missing");
 assert.ok(read("lib/supabase.ts").includes("is_brand_admin") || read("lib/supabase.ts").includes("fetchAllProducts"), "supabase admin fns missing");
 assert.ok(read("lib/store.ts").includes("persistProduct"), "store persist missing");
-assert.ok(read("components/Preloader.tsx").includes("apv-boot"), "preloader missing");
+assert.ok(read("lib/auth.tsx").includes('"pending"'), "pending role missing");
+assert.ok(read("app/admin/page.tsx").includes("MENUNGGU AKSES"), "admin gate missing");
+assert.ok(read("app/super/page.tsx").includes("AccessManager") || read("app/super/page.tsx").includes("fetchProfiles"), "approvals missing");
+assert.ok(existsSync(join(root, "supabase/patch-006-access.sql")), "patch-006 missing");
+assert.ok(read("app/api/checkout/route.ts").includes("track_token"), "track token missing");
+assert.ok(existsSync(join(root, "app/api/track/route.ts")), "track api missing");
+assert.ok(read("components/Preloader.tsx").includes("boot-exit"), "preloader missing");
 assert.ok(read("components/ProductCard.tsx").includes("images[1]"), "hover-swap missing");
 assert.ok(read("app/page.tsx").includes("announcement"), "announcement missing");
 assert.ok(read("components/admin/BrandForm.tsx").includes("whatsapp"), "wa field missing");

@@ -116,8 +116,7 @@ export default function Admin() {
   const orderCount = dbOrders ? dbOrders.length : mounted ? listOrders().length : 0;
 
   // Tunggu mount agar SSR/client sama (auth dibaca dari browser).
-  if (!mounted || !user) {
-    return (
+  if (!mounted || !user) {    return (
       <main className="mx-auto max-w-sm px-4 py-20">
         <h1 className="font-display text-3xl">ADMIN LOGIN</h1>
         <p className="text-sm opacity-60">
@@ -137,6 +136,19 @@ export default function Admin() {
         }} className="mt-3 w-full rounded-xl bg-white py-3 font-bold text-black cursor-pointer">
           {mode === "demo" ? "Enter demo admin" : "Send magic link"}
         </button>
+      </main>
+    );
+  }
+  // Kunci peran: hanya yang terdaftar di profiles (server truth).
+  if (user.role !== "superadmin" && user.role !== "brand_admin") {
+    return (
+      <main className="mx-auto max-w-sm px-4 py-20">
+        <h1 className="font-display text-3xl">MENUNGGU AKSES</h1>
+        <p className="mt-2 text-sm opacity-60">
+          Akun <b>{user.email}</b> tercatat sebagai <b>pending</b>. Minta superadmin
+          menyetujuimu di <b>/super</b> → akunmu otomatis terbuka saat refresh.
+        </p>
+        <button onClick={logout} className="mt-4 w-full rounded-xl border border-white/20 py-3 cursor-pointer">Logout</button>
       </main>
     );
   }

@@ -153,18 +153,24 @@ export async function POST(req: Request) {
   // 4. Catat order (idempotency_key unik di DB -> duplikat = dedupe).
   const ship = lane === "express" ? 32 : 14;
   const total = subtotal - discount + ship;
+  const trackToken =
+    typeof crypto !== "undefined" && "randomUUID" in crypto
+      ? crypto.randomUUID()
+      : `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`;
   let finalId = orderId;
+  const orderRow = {
+    brand_id: brandId,
+    email: b.email,
+    items: valid,
+    total_usd: total,
+    lane,
+    provider: "mock",
+    idempotency_key: key,
+    track_token: trackToken,
+  };
   try {
     finalId = await saveOrder(
-      {
-        brand_id: brandId,
-        email: b.email,
-        items: valid,
-        total_usd: total,
-        lane,
-        provider: "mock",
-        idempotency_key: key,
-      },
+      orderRow,
       orderId.startsWith("MOCK-") ? undefined : orderId
     );
   } catch (e) {
@@ -174,15 +180,26 @@ export async function POST(req: Request) {
       const waNum2 = (brand.whatsapp ?? "").replace(/\D/g, "");
       const waBase2 = waNum2.length >= 8 && waNum2.length <= 15 ? `https://wa.me/${waNum2}` : "https://wa.me";
       const wa = `${waBase2}?text=${encodeURIComponent(`Order ${orderId} $${total} via ${lane}`)}`;
-      return NextResponse.json({ orderId, total, deduped: true, url: `/success?order=${orderId}&wa=${encodeURIComponent(wa)}` });
+      return NextResponse.json({ orderId, total, deduped: true, trackToken, url: `/success?order=${orderId}&tk=${trackToken}&wa=${encodeURIComponent(wa)}` });
     }
-    console.error("[checkout:db] save failed, MOCK fallback:", e instanceof Error ? e.message : e);
-    finalId = `MOCK-${Date.now().toString(36).toUpperCase()}`;
+    // Skema lama (pre patch-006, tanpa kolom track_token) -> coba tanpa token.
+    try {
+      const { track_token: _drop, ...legacyRow } = orderRow;
+      void _drop;
+      finalId = await saveOrder(
+        legacyRow,
+        orderId.startsWith("MOCK-") ? undefined : orderId
+      );
+    } catch (e2) {
+      console.error("[checkout:db] save failed, MOCK fallback:", e2 instanceof Error ? e2.message : e2);
+      finalId = `MOCK-${Date.now().toString(36).toUpperCase()}`;
+    }
   }
   if (key) seen.set(key, { orderId: finalId, total, at: Date.now() });
   // WhatsApp: nomor dari admin (/super → Tampilan → WA). Kosong = link share.
   const waNum = (brand.whatsapp ?? "").replace(/\D/g, "");
   const waBase = waNum.length >= 8 && waNum.length <= 15 ? `https://wa.me/${waNum}` : "https://wa.me";
   const wa = `${waBase}?text=${encodeURIComponent(`Order ${finalId} $${total} via ${lane} (${valid.length} items)`)}`;
-  return NextResponse.json({ orderId: finalId, total, discount, promoPercent, promoCode, url: `/success?order=${finalId}&wa=${encodeURIComponent(wa)}` });
+  const url = `/success?order=${finalId}&tk=${trackToken}&wa=${encodeURIComponent(wa)}`;
+  return NextResponse.json({ orderId: finalId, total, discount, promoPercent, promoCode, trackToken, url });
 }

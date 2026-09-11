@@ -1,10 +1,11 @@
 "use client";
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
-import { supabaseConfigured } from "./supabase";
+import { supabaseConfigured, getSession } from "./supabase";
 
-// Auth ganda: demo (tanpa env) + Supabase Auth asli (saat env terisi).
+// Auth ganda: demo (tanpa env, dev saja) + Supabase Auth asli (saat env terisi).
+// Role SELALU dari tabel profiles (server truth). Tanpa baris = "pending".
 // Tanpa dependensi baru — REST langsung. UI tidak berubah saat migrasi.
-export type Role = "superadmin" | "brand_admin" | "customer";
+export type Role = "superadmin" | "brand_admin" | "pending";
 export interface AuthUser { email: string; role: Role; provider: "demo" | "supabase" }
 
 interface AuthCtx {
@@ -22,14 +23,19 @@ const SUPA_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "";
 
 const SESSION_KEY = "apv-session-v1";
 
-function decodeEmail(token: string): string | null {
+function decodeJwt(token: string): Record<string, unknown> | null {
   try {
-    const payload = JSON.parse(atob(token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/")));
-    if (typeof payload.exp === "number" && payload.exp * 1000 < Date.now()) return null;
-    return typeof payload.email === "string" ? payload.email : null;
+    return JSON.parse(atob(token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/")));
   } catch {
     return null;
   }
+}
+
+function decodeEmail(token: string): string | null {
+  const payload = decodeJwt(token);
+  if (!payload) return null;
+  if (typeof payload.exp === "number" && payload.exp * 1000 < Date.now()) return null;
+  return typeof payload.email === "string" ? payload.email : null;
 }
 
 /** Tangkap sesi dari hash URL (#access_token=...) sepulang magic link.
@@ -48,7 +54,7 @@ function consumeHash(): AuthUser | null {
   } catch {
     /* abaikan */
   }
-  const user: AuthUser = { email, role: "brand_admin", provider: "supabase" };
+  const user: AuthUser = { email, role: "pending", provider: "supabase" };
   try {
     localStorage.setItem(KEY, JSON.stringify(user));
     sessionStorage.setItem("apv-just-login", "1");
@@ -92,6 +98,50 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } catch {
       /* abaikan */
     }
+  }, []);
+
+  // Resolusi role dari profiles (server truth). Self-register pending bila belum ada.
+  useEffect(() => {
+    if (!supabaseConfigured()) return;
+    const s = getSession();
+    if (!s?.access) return;
+    const payload = decodeJwt(s.access);
+    const sub = payload && typeof payload.sub === "string" ? payload.sub : null;
+    if (!sub) return;
+    let live = true;
+    const base = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
+    const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "";
+    const headers = { apikey: key, Authorization: `Bearer ${s.access}`, "Content-Type": "application/json" };
+    (async () => {
+      try {
+        // Daftarkan diri sebagai pending (diabaikan bila baris sudah ada).
+        await fetch(`${base}/rest/v1/profiles`, {
+          method: "POST",
+          headers: { ...headers, Prefer: "return=minimal" },
+          body: JSON.stringify({ user_id: sub, email: s.email, role: "pending" }),
+        }).catch(() => undefined);
+        const res = await fetch(`${base}/rest/v1/profiles?select=role&limit=1`, { headers });
+        if (!res.ok) return;
+        const rows = (await res.json()) as { role: string }[];
+        const role = (["superadmin", "brand_admin", "pending"] as const).find((x) => x === rows[0]?.role);
+        if (!live || !role) return;
+        setUser((prev) => {
+          if (!prev || prev.role === role) return prev;
+          const next = { ...prev, role };
+          try {
+            localStorage.setItem(KEY, JSON.stringify(next));
+          } catch {
+            /* abaikan */
+          }
+          return next;
+        });
+      } catch {
+        /* offline -> pertahankan peran lokal */
+      }
+    })();
+    return () => {
+      live = false;
+    };
   }, []);
 
   const persist = (u: AuthUser | null) => {
