@@ -6,7 +6,8 @@ import { useMounted } from "@/lib/store";
 import { getSession } from "@/lib/supabase";
 import {
   fetchAllBrands, createBrandRow, updateBrandRow, deleteBrandRow, fetchOwnRole,
-  type BrandAdminRow,
+  fetchProfiles, setProfileRole, deleteProfile,
+  type BrandAdminRow, type ProfileRow,
 } from "@/lib/supabase";
 import { BrandForm, type BrandFormInitial } from "@/components/admin/BrandForm";
 import { saveBrand } from "@/lib/brand-store";
@@ -208,6 +209,72 @@ export default function Super() {
         Brand aktif + domain terpasang = langsung tayang di 1 deploy ini (resolusi domain, cache 60 detik).
         Nonaktif = domain-nya tampil halaman nonaktif. Tanpa coding, tanpa deploy ulang.
       </p>
+      <AccessManager />
     </main>
+  );
+}
+
+/** Persetujuan akses: pending -> brand_admin / superadmin / tolak. */
+function AccessManager() {
+  const [list, setList] = useState<ProfileRow[] | null>(null);
+  const [err, setErr] = useState("");
+  const reload = () => {
+    fetchProfiles()
+      .then((r) => setList(r ?? []))
+      .catch(() => setErr("Gagal baca akun (cek patch-006)."));
+  };
+  useEffect(() => {
+    reload();
+  }, []);
+  const act = async (fn: () => Promise<void>, fail: string) => {
+    setErr("");
+    try {
+      await fn();
+      reload();
+    } catch {
+      setErr(fail);
+    }
+  };
+  const pendings = (list ?? []).filter((p) => p.role === "pending");
+  const members = (list ?? []).filter((p) => p.role !== "pending");
+  return (
+    <div className="mt-8 rounded-xl border border-white/10 p-4">
+      <p className="font-bold">AKSES AKUN ({pendings.length} pending)</p>
+      {err && <p role="alert" className="mt-2 text-sm text-red-400">{err}</p>}
+      {list === null && <p className="mt-2 text-sm opacity-60">Memuat…</p>}
+      {pendings.map((p) => (
+        <div key={p.user_id} className="mt-2 flex flex-wrap items-center gap-2 rounded-xl border border-amber-300/30 bg-amber-300/5 p-3 text-sm">
+          <b>{p.email || p.user_id.slice(0, 8)}</b>
+          <span className="opacity-50">minta akses</span>
+          <span className="ml-auto flex gap-2">
+            <button onClick={() => void act(() => setProfileRole(p.user_id, "brand_admin", "a-private-violence"), "Gagal setujui.")}
+              className="rounded-lg bg-white px-3 py-1.5 font-bold text-black cursor-pointer">Admin</button>
+            <button onClick={() => void act(() => setProfileRole(p.user_id, "superadmin", "a-private-violence"), "Gagal setujui.")}
+              className="rounded-lg border border-white/20 px-3 py-1.5 cursor-pointer">Superadmin</button>
+            <button onClick={() => void act(() => deleteProfile(p.user_id), "Gagal tolak.")}
+              className="rounded-lg border border-red-400/40 px-3 py-1.5 cursor-pointer">Tolak</button>
+          </span>
+        </div>
+      ))}
+      {members.map((p) => (
+        <div key={p.user_id} className="mt-2 flex flex-wrap items-center gap-2 rounded-xl border border-white/10 p-3 text-sm">
+          <b>{p.email || p.user_id.slice(0, 8)}</b>
+          <span className="rounded-full bg-white/10 px-2 py-0.5 text-xs">{p.role}</span>
+          <span className="ml-auto flex gap-2">
+            {p.role !== "superadmin" && (
+              <button onClick={() => void act(() => setProfileRole(p.user_id, "superadmin", p.brand_id), "Gagal ubah.")}
+                className="rounded-lg border border-white/20 px-3 py-1.5 cursor-pointer">Jadikan superadmin</button>
+            )}
+            {p.role !== "brand_admin" && (
+              <button onClick={() => void act(() => setProfileRole(p.user_id, "brand_admin", p.brand_id), "Gagal ubah.")}
+                className="rounded-lg border border-white/20 px-3 py-1.5 cursor-pointer">Jadikan admin</button>
+            )}
+            <button onClick={() => void act(() => deleteProfile(p.user_id), "Gagal cabut.")}
+              className="rounded-lg border border-red-400/40 px-3 py-1.5 cursor-pointer">Cabut</button>
+          </span>
+        </div>
+      ))}
+      <p className="mt-2 text-xs opacity-50">Alur: orang login via /admin → tercatat pending → setujui di sini. Tanpa SQL lagi.</p>
+    </div>
   );
 }

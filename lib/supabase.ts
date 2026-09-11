@@ -391,8 +391,7 @@ export interface BrandAdminRow {
 }
 
 /** Role user login (null = tamu). */
-export async function fetchOwnRole(): Promise<string | null> {
-  if (!supabaseConfigured() || !getSession()) return null;
+export async function fetchOwnRole(): Promise<string | null> {  if (!supabaseConfigured() || !getSession()) return null;
   try {
     const rows = await readJson<{ role: string }[]>(`profiles?select=role&limit=1`);
     return rows[0]?.role ?? null;
@@ -439,5 +438,34 @@ export async function updateBrandRow(id: string, patch: Partial<{
 /** Hapus brand (superadmin). Produk/order yatim tetap di DB (aman). */
 export async function deleteBrandRow(id: string): Promise<void> {
   const res = await rest(`brands?id=eq.${encodeURIComponent(id)}`, { method: "DELETE" });
+  if (!res.ok) throw new Error(`Supabase ${res.status}`);
+}
+
+/* ---------- superadmin: persetujuan akses ---------- */
+
+export interface ProfileRow { user_id: string; email: string; role: string; brand_id: string | null }
+
+/** Daftar semua akun (butuh role superadmin, patch-006). */
+export async function fetchProfiles(): Promise<ProfileRow[] | null> {
+  if (!supabaseConfigured() || !getSession()) return null;
+  try {
+    return await readJson(`profiles?select=user_id,email,role,brand_id&order=email`);
+  } catch {
+    return null;
+  }
+}
+
+/** Ubah role akun (butuh role superadmin, patch-006). */
+export async function setProfileRole(userId: string, role: string, brandId: string | null): Promise<void> {
+  const res = await rest(`profiles?user_id=eq.${encodeURIComponent(userId)}`, {
+    method: "PATCH",
+    body: JSON.stringify({ role, brand_id: brandId }),
+  });
+  if (!res.ok) throw new Error(`Supabase ${res.status}`);
+}
+
+/** Tolak akses = hapus baris (butuh role superadmin, patch-006). */
+export async function deleteProfile(userId: string): Promise<void> {
+  const res = await rest(`profiles?user_id=eq.${encodeURIComponent(userId)}`, { method: "DELETE" });
   if (!res.ok) throw new Error(`Supabase ${res.status}`);
 }

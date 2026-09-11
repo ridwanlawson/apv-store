@@ -3,7 +3,7 @@
 // Tanpa sesi: perilaku lokal seperti sebelumnya. Dengan sesi: baca DB + tulis DB.
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { products as seed, type Product } from "./products";
-import { fetchAllProducts, toProduct, upsertProduct, deleteProductRow, getSession } from "./supabase";
+import { fetchAllProducts, fetchProducts, toProduct, upsertProduct, deleteProductRow, getSession, type DbProductRow } from "./supabase";
 import { useBrand } from "./brand-store";
 
 /** true hanya setelah hydrate — pakai ini untuk render data client (anti hydration-mismatch). */
@@ -62,11 +62,13 @@ export function useProductStore() {
       /* storage penuh -> abaikan */
     }
   }, [items, brandId]);
-  // Sinkron dari DB sekali setelah mount bila ada sesi (admin login).
-  // DB ada isi -> pakai DB. DB kosong -> bootstrap: dorong lokal ke DB (migrasi pertama).
+  // Sinkron dari DB sekali setelah mount.
+  // Login (admin): semua baris; kosong -> bootstrap dorong lokal ke DB.
+  // Publik (tanpa sesi): gabung katalog published DB (menang per slug) + lokal.
   useEffect(() => {
-    if (!mounted || !getSession()) return;
-    fetchAllProducts(brandId)
+    if (!mounted) return;
+    if (getSession()) {
+      fetchAllProducts(brandId)
       .then((rows) => {
         if (rows && rows.length > 0) {
           setItems(rows.map(toProduct));
@@ -94,6 +96,24 @@ export function useProductStore() {
         }
       })
       .catch(() => { /* offline / belum ada akses -> tetap lokal */ });
+    } else {
+      // Publik: gabung katalog published DB di atas lokal (DB menang per slug).
+      fetchProducts(brandId)
+        .then((rows) => {
+          if (!rows || rows.length === 0) return;
+          const db = new Map(
+            (rows as unknown as DbProductRow[]).map(toProduct).map((p) => [p.slug, p])
+          );
+          setItems((prev) => {
+            const keep = prev.filter((p) => !db.has(p.slug));
+            const merged = [...db.values(), ...keep];
+            // Jangan timpa bila identik (hindari render loop).
+            if (merged.length === prev.length && merged.every((m, i) => m.id === prev[i]?.id)) return prev;
+            return merged;
+          });
+        })
+        .catch(() => { /* offline -> tetap lokal/seed */ });
+    }
   }, [mounted, brandId]);
   return { items, setItems };
 }
