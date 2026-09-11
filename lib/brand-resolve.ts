@@ -48,6 +48,8 @@ export function brandFromRow(row: BrandRow): BrandConfig {
     currency: row.currency || "USD",
     lang: "en",
     contact: (c.contact as string) ?? DEFAULTS.contact,
+    whatsapp: (c.whatsapp as string) ?? undefined,
+    announcement: (c.announcement as string) ?? undefined,
     socials,
     hero: {
       headline: hero.headline ?? row.name,

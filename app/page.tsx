@@ -22,6 +22,12 @@ export default function Home() {
 
   return (
     <main>
+      {/* Announcement bar (dari admin, scroll-away) */}
+      {b.announcement && (
+        <p className="bg-[#C1121F] px-4 py-2 text-center text-xs font-bold tracking-[0.2em] text-white">
+          {b.announcement}
+        </p>
+      )}
       {/* SCROLL-3D fullscreen paling atas (frame dari config brand) */}
       {b.sequence ? (
         <ScrollSequence seq={b.sequence} frames={120} ext="webp" headline={b.hero.headline} sub={b.hero.sub} />

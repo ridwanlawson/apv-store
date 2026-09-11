@@ -8,6 +8,8 @@ export interface BrandFormInitial {
   name: string;
   tagline: string;
   contact: string;
+  whatsapp: string;
+  announcement: string;
   logo: string;
   logoFull: string;
   favicon: string;
@@ -25,13 +27,15 @@ export function BrandForm({ initial, onSave, onReset, submitLabel = "Simpan tamp
 } = {}) {
   const b = useBrand();
   const src: BrandFormInitial = initial ?? {
-    brandId: b.id, name: b.name, tagline: b.tagline, contact: b.contact,
+    brandId: b.id, name: b.name, tagline: b.tagline, contact: b.contact, whatsapp: b.whatsapp ?? "", announcement: b.announcement ?? "",
     logo: b.logo ?? "", logoFull: b.logoFull ?? "", favicon: b.favicon ?? "",
     colors: b.colors, hero: b.hero,
   };
   const [name, setName] = useState(src.name);
   const [tagline, setTagline] = useState(src.tagline);
   const [contact, setContact] = useState(src.contact);
+  const [whatsapp, setWhatsapp] = useState(src.whatsapp);
+  const [announcement, setAnnouncement] = useState(src.announcement);
   const [logo, setLogo] = useState(src.logo);
   const [logoFull, setLogoFull] = useState(src.logoFull);
   const [favicon, setFavicon] = useState(src.favicon);
@@ -45,7 +49,7 @@ export function BrandForm({ initial, onSave, onReset, submitLabel = "Simpan tamp
   const [synced, setSynced] = useState(src.name + src.brandId);
   if (synced !== src.name + src.brandId && document.activeElement?.tagName !== "INPUT") {
     setSynced(src.name + src.brandId);
-    setName(src.name); setTagline(src.tagline); setContact(src.contact);
+    setName(src.name); setTagline(src.tagline); setContact(src.contact); setWhatsapp(src.whatsapp); setAnnouncement(src.announcement);
     setLogo(src.logo); setLogoFull(src.logoFull); setFavicon(src.favicon);
     setColors({ ...src.colors }); setHero({ ...src.hero });
   }
@@ -54,7 +58,7 @@ export function BrandForm({ initial, onSave, onReset, submitLabel = "Simpan tamp
     setSaving(true);
     setMsg("");
     try {
-      const patch = { name, tagline, contact, logo, logoFull, favicon, colors, hero };
+      const patch = { name, tagline, contact, whatsapp: whatsapp.replace(/\D/g, ""), announcement, logo, logoFull, favicon, colors, hero };
       if (onSave) await onSave(patch);
       else await saveBrand(patch, src.brandId);
       setSaved(true);
@@ -116,6 +120,10 @@ export function BrandForm({ initial, onSave, onReset, submitLabel = "Simpan tamp
             <input value={tagline} onChange={(e) => setTagline(e.target.value)} className={`mt-1 ${input}`} /></label>
           <label className="text-xs opacity-70">Email kontak
             <input value={contact} onChange={(e) => setContact(e.target.value)} className={`mt-1 ${input}`} /></label>
+          <label className="text-xs opacity-70">No. WhatsApp order (digit, cth 62812…)
+            <input value={whatsapp} onChange={(e) => setWhatsapp(e.target.value.replace(/\D/g, ""))} inputMode="tel" placeholder="6281234567890" className={`mt-1 ${input}`} /></label>
+          <label className="text-xs opacity-70">Pengumuman (kosongkan untuk sembunyi)
+            <input value={announcement} onChange={(e) => setAnnouncement(e.target.value)} placeholder="FREE WORLDWIDE SHIPPING OVER $150" className={`mt-1 ${input}`} /></label>
         </div>
       </div>
 

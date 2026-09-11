@@ -15,6 +15,8 @@ export interface BrandConfig {
   currency: string;
   lang: string;
   contact: string;
+  whatsapp?: string; // nomor WA order (digit saja, mis. 6281234567890). Kosong = link share.
+  announcement?: string; // bar pengumuman di atas halaman (kosong = sembunyi).
   socials: { instagram?: string; tiktok?: string };
   hero: { headline: string; sub: string; cta: string; poster: string };
   logo?: string; // emblem tengah navbar, mis. /brands/a-private-violence/logo.webp

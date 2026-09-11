@@ -48,6 +48,11 @@ assert.ok(read("components/Navbar.tsx").includes("useBrand"), "navbar brand wiri
 assert.ok(existsSync(join(root, "supabase/patch-002-rbac.sql")), "patch-002 missing");
 assert.ok(read("lib/supabase.ts").includes("is_brand_admin") || read("lib/supabase.ts").includes("fetchAllProducts"), "supabase admin fns missing");
 assert.ok(read("lib/store.ts").includes("persistProduct"), "store persist missing");
+assert.ok(read("components/Preloader.tsx").includes("apv-boot"), "preloader missing");
+assert.ok(read("components/ProductCard.tsx").includes("images[1]"), "hover-swap missing");
+assert.ok(read("app/page.tsx").includes("announcement"), "announcement missing");
+assert.ok(read("components/admin/BrandForm.tsx").includes("whatsapp"), "wa field missing");
+assert.ok(read("app/api/checkout/route.ts").includes("wa.me/${waNum"), "wa checkout missing");
 assert.ok(read("lib/brand-resolve.ts").includes("resolveBrand"), "resolveBrand missing");
 assert.ok(read("lib/brand-store.tsx").includes("BrandProvider"), "BrandProvider missing");
 assert.ok(existsSync(join(root, "supabase/patch-005-brands.sql")), "patch-005 missing");

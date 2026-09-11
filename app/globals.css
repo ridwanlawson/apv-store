@@ -8,8 +8,8 @@
 .font-display { font-family: var(--font-display), sans-serif; }
 .font-body { font-family: var(--font-body), sans-serif; }
 
-html { scroll-behavior: smooth; }
-body { text-rendering: optimizeLegibility; }
+html { scroll-behavior: auto; }
+body { text-rendering: optimizeLegibility; overflow-x: clip; }
 
 /* Kanvas sequence: gesture vertikal selalu milik page (scroll HP tidak dimakan). */
 .seq-stage, .seq-stage canvas { touch-action: pan-y; }
@@ -31,7 +31,13 @@ body { text-rendering: optimizeLegibility; }
 .marquee { animation: marquee 22s linear infinite; }
 @keyframes marquee { from { transform: translateX(0); } to { transform: translateX(-50%); } }
 
-/* slow ken-burns for hero poster (cheap motion, no video file needed) */
+/* Preloader: keluar otomatis 1.05s (CSS-only, tanpa JS). */
+.boot-exit { animation: bootfade 0.45s ease 1.05s forwards; }
+@keyframes bootfade { to { opacity: 0; visibility: hidden; } }
+.boot-pop { animation: bootpop 0.5s cubic-bezier(0.22,1,0.36,1) both; }
+@keyframes bootpop { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+.boot-bar { animation: bootbar 1s ease-out forwards; }
+@keyframes bootbar { from { transform: translateX(-100%); } to { transform: translateX(0); } }
 .kenburns { animation: kenburns 24s ease-in-out infinite alternate; }
 @keyframes kenburns { from { transform: scale(1); } to { transform: scale(1.12); } }
 

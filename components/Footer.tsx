@@ -7,13 +7,16 @@ export function Footer() {
   const b = useBrand();
   const t = useT();
   return (
-    <footer className="mt-20 border-t border-white/10 px-4 py-10 text-sm opacity-70">
+    <footer className="mt-20 border-t border-white/10 px-4 pb-10 pt-14 text-sm">
+      <p className="mx-auto max-w-6xl text-center font-display text-[11vw] leading-[0.95] tracking-tight opacity-90 sm:text-7xl" aria-label={b.tagline}>
+        {b.tagline.toUpperCase() || b.name.toUpperCase()}
+      </p>
       {b.logoFull && (
-        <div className="mx-auto mb-8 flex max-w-6xl justify-center">
+        <div className="mx-auto mb-8 mt-8 flex max-w-6xl justify-center opacity-70">
           <Image src={b.logoFull} alt={`${b.name} lockup`} width={480} height={270} className="h-20 w-auto opacity-90 sm:h-24" loading="lazy" />
         </div>
       )}
-      <div className="mx-auto flex max-w-6xl flex-col gap-2 sm:flex-row sm:justify-between">
+      <div className="mx-auto flex max-w-6xl flex-col gap-2 opacity-70 sm:flex-row sm:justify-between">
         <p>© {new Date().getFullYear()} {b.name} · {b.tagline}</p>
         <nav className="flex flex-wrap gap-4" aria-label="Policies">
           <a href="/size-guide" className="hover:underline">{t("footSize")}</a>
@@ -22,7 +25,7 @@ export function Footer() {
           <a href="/policies/privacy" className="hover:underline">{t("footPriv")}</a>
         </nav>
       </div>
-      <p className="mx-auto mt-2 max-w-6xl">Contact: {b.contact} · {t("footNote")}</p>
+      <p className="mx-auto mt-2 max-w-6xl opacity-70">Contact: {b.contact} · {t("footNote")}</p>
     </footer>
   );
 }
