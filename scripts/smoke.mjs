@@ -58,6 +58,16 @@ assert.ok(read("app/api/checkout/route.ts").includes("decrementStock"), "checkou
 assert.ok(read("app/track-order/page.tsx").includes("listOrders"), "track lokal missing");
 assert.ok(read("app/super/page.tsx").includes("useBrand"), "super mati");
 
+// 11. CMS penuh: promo, status order, CSV import, stats, reorder, coret
+assert.ok(existsSync(join(root, "supabase/patch-004-promo.sql")), "patch-004 missing");
+assert.ok(existsSync(join(root, "app/api/promo/route.ts")), "promo api missing");
+assert.ok(read("app/api/checkout/route.ts").includes("promoCode"), "checkout promo missing");
+assert.ok(existsSync(join(root, "components/admin/PromoManager.tsx")), "promo manager missing");
+assert.ok(existsSync(join(root, "components/admin/OrderCard.tsx")), "order card missing");
+assert.ok(read("app/admin/page.tsx").includes("StatsStrip"), "stats missing");
+assert.ok(read("lib/store.ts").includes("parseCSV"), "csv import missing");
+assert.ok(read("lib/products.ts").includes("mainImage"), "mainImage missing");
+
 // 7. Size guide: data + UI terpasang di PDP, quick-view, footer
 assert.ok(read("lib/sizeguide.ts").includes("recommendTop"), "size data missing");
 for (const p of ["components/SizeGuideContent.tsx", "components/SizeGuideModal.tsx", "app/size-guide/page.tsx"]) {

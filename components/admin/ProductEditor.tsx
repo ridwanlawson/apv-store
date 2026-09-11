@@ -96,6 +96,14 @@ export function ProductEditor({ p, onSave, onCancel }: {
               aria-label={`Hapus gambar ${i + 1}`}
               className="absolute right-1 top-1 rounded-full bg-black/70 px-2 py-0.5 text-xs cursor-pointer">✕</button>
             {i === 0 && <span className="absolute left-1 top-1 rounded-full bg-white px-2 py-0.5 text-[10px] font-bold text-black">Utama</span>}
+            {images.length > 1 && (
+              <span className="absolute bottom-1 left-1 flex gap-1">
+                <button onClick={() => setImages((prev) => (i === 0 ? prev : [...prev.slice(0, i - 1), prev[i], prev[i - 1], ...prev.slice(i + 1)]))}
+                  aria-label="Geser kiri" className="rounded-full bg-black/70 px-1.5 text-[10px] cursor-pointer">◀</button>
+                <button onClick={() => setImages((prev) => (i === prev.length - 1 ? prev : [...prev.slice(0, i), prev[i + 1], prev[i], ...prev.slice(i + 2)]))}
+                  aria-label="Geser kanan" className="rounded-full bg-black/70 px-1.5 text-[10px] cursor-pointer">▶</button>
+              </span>
+            )}
           </div>
         ))}
       </div>

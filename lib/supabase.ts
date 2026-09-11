@@ -283,6 +283,8 @@ export interface DbOrderRow {
   total_usd: number;
   lane: string;
   created_at: string;
+  status: string;
+  tracking: string;
 }
 
 /** Baca order terbaru untuk admin. */
@@ -290,11 +292,66 @@ export async function fetchOrders(brandId: string): Promise<DbOrderRow[] | null>
   if (!supabaseConfigured() || !getSession()) return null;
   try {
     return await readJson(
-      `orders?brand_id=eq.${encodeURIComponent(brandId)}&select=id,email,items,total_usd,lane,created_at&order=created_at.desc&limit=100`
+      `orders?brand_id=eq.${encodeURIComponent(brandId)}&select=id,email,items,total_usd,lane,status,tracking,created_at&order=created_at.desc&limit=100`
     );
   } catch {
     return null;
   }
+}
+
+/** Update status/tracking order (admin). */
+export async function updateOrder(id: string, patch: { status?: string; tracking?: string }): Promise<void> {
+  const res = await rest(`orders?id=eq.${encodeURIComponent(id)}`, {
+    method: "PATCH",
+    body: JSON.stringify(patch),
+  });
+  if (!res.ok) throw new Error(`Supabase ${res.status}`);
+}
+
+export interface Discount { code: string; percent: number; active: boolean }
+
+/** Promo aktif (publik — untuk validasi checkout). */
+export async function fetchPromo(code: string): Promise<Discount | null> {
+  if (!supabaseConfigured() || !code) return null;
+  try {
+    const base = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
+    const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "";
+    const res = await fetch(
+      `${base}/rest/v1/discounts?code=eq.${encodeURIComponent(code.toUpperCase().trim())}&select=code,percent,active&limit=1`,
+      { headers: { apikey: key, Authorization: `Bearer ${key}` }, cache: "no-store" }
+    );
+    if (!res.ok) return null;
+    const rows = (await res.json()) as Discount[];
+    return rows[0] && rows[0].active ? rows[0] : null;
+  } catch {
+    return null;
+  }
+}
+
+/** Semua promo untuk admin. */
+export async function fetchDiscounts(): Promise<Discount[] | null> {
+  if (!supabaseConfigured() || !getSession()) return null;
+  try {
+    return await readJson(`discounts?select=code,percent,active&order=code`);
+  } catch {
+    return null;
+  }
+}
+
+/** Simpan promo (admin). */
+export async function upsertDiscount(d: Discount): Promise<void> {
+  const res = await rest("discounts", {
+    method: "POST",
+    headers: { Prefer: "resolution=merge-duplicates,return=minimal" },
+    body: JSON.stringify({ code: d.code.toUpperCase().trim(), percent: d.percent, active: d.active }),
+  });
+  if (!res.ok) throw new Error(`Supabase ${res.status}`);
+}
+
+/** Hapus promo (admin). */
+export async function deleteDiscount(code: string): Promise<void> {
+  const res = await rest(`discounts?code=eq.${encodeURIComponent(code)}`, { method: "DELETE" });
+  if (!res.ok) throw new Error(`Supabase ${res.status}`);
 }
 
 export type DbHealth =

@@ -59,6 +59,8 @@ const dict: Record<Lang, Record<string, string>> = {
     footNote: "Duties (DDU) by buyer · Returns 30 days (buyer pays return shipping)",
     cookieT: "Cookies. Essentials only. Analytics (GA4/Pixel) run only if you agree.",
     accept: "Accept", decline: "Decline", privacy: "Privacy",
+    promo: "Promo code", promoPh: "Enter code", promoApply: "Apply",
+    discount: "Discount", promoBad: "Invalid or expired code.",
   },
   id: {
     navShop: "Belanja", navLook: "Lookbook", navTrack: "Lacak", navCart: "Keranjang",
@@ -112,6 +114,8 @@ const dict: Record<Lang, Record<string, string>> = {
     footNote: "Bea (DDU) pembeli · Retur 30 hari (ongkir retur pembeli)",
     cookieT: "Cookie. Hanya yang esensial. Analitik (GA4/Pixel) jika kamu setuju.",
     accept: "Setuju", decline: "Tolak", privacy: "Privasi",
+    promo: "Kode promo", promoPh: "Masukkan kode", promoApply: "Pakai",
+    discount: "Diskon", promoBad: "Kode salah/kedaluwarsa.",
   },
   ja: {
     navShop: "ショップ", navLook: "ルックブック", navTrack: "追跡", navCart: "カート",
@@ -165,6 +169,8 @@ const dict: Record<Lang, Record<string, string>> = {
     footNote: "関税(DDU)は購入者負担 · 返品30日(返送料は購入者負担)",
     cookieT: "Cookieは必須のみ。分析(GA4/Pixel)は同意時のみ実行。",
     accept: "同意する", decline: "拒否", privacy: "プライバシー",
+    promo: "プロモコード", promoPh: "コード入力", promoApply: "適用",
+    discount: "割引", promoBad: "無効なコード。",
   },
 };
 

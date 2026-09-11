@@ -15,8 +15,27 @@ export default function CartPage() {
   const [lane, setLane] = useState<Lane>("economy");
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState("");
+  const [promoIn, setPromoIn] = useState("");
+  const [promo, setPromo] = useState<{ code: string; percent: number } | null>(null);
+  const [promoErr, setPromoErr] = useState("");
   const router = useRouter();
   const ship = items.length === 0 ? 0 : lane === "economy" ? 14 : 32;
+  const discount = promo ? Math.round((total * promo.percent) / 100) : 0;
+
+  const applyPromo = async () => {
+    const code = promoIn.trim();
+    if (!code) return;
+    setPromoErr("");
+    try {
+      const res = await fetch(`/api/promo?code=${encodeURIComponent(code)}`);
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? t("promoBad"));
+      setPromo({ code: data.code, percent: data.percent });
+    } catch (e) {
+      setPromo(null);
+      setPromoErr(e instanceof Error ? e.message : t("promoBad"));
+    }
+  };
 
   return (
     <main className="mx-auto max-w-3xl px-4 py-10">
@@ -46,7 +65,14 @@ export default function CartPage() {
               </button>
             ))}
           </div>
-          <p className="text-right text-lg font-bold">{t("totalShip")} <Price usdAmount={total + ship} /> <span className="text-xs font-normal opacity-50">{t("chargedUsd")}</span></p>
+          <div className="flex gap-2">
+            <input value={promoIn} onChange={(e) => setPromoIn(e.target.value)} placeholder={t("promoPh")} aria-label={t("promo")}
+              className="flex-1 rounded-xl border border-white/15 bg-white/5 px-4 py-3 uppercase outline-none placeholder:text-white/40 placeholder:normal-case focus:border-white/50" />
+            <button onClick={() => void applyPromo()} className="rounded-xl border border-white/25 px-5 cursor-pointer hover:bg-white/10">{t("promoApply")}</button>
+          </div>
+          {promoErr && <p role="alert" className="text-sm text-red-400">{promoErr}</p>}
+          {promo && <p className="text-sm text-green-400">{t("discount")}: {promo.code} −{promo.percent}% (−<Price usdAmount={discount} />)</p>}
+          <p className="text-right text-lg font-bold">{t("totalShip")} <Price usdAmount={total - discount + ship} /> <span className="text-xs font-normal opacity-50">{t("chargedUsd")}</span></p>
           {err && <p role="alert" className="text-sm text-red-400">{err}</p>}
           <button disabled={loading} onClick={async () => {
             if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) { setErr(t("invalidEmail")); return; }
@@ -57,7 +83,7 @@ export default function CartPage() {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
-                  email, lane, idempotencyKey: key,
+                  email, lane, idempotencyKey: key, promo: promo?.code ?? null,
                   items: items.map((i) => ({ slug: i.slug, qty: i.qty, size: i.size, name: i.name, price: i.price })),
                 }),
               });
