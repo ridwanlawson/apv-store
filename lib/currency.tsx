@@ -56,9 +56,16 @@ export function money(usdAmount: number, cur: Currency): string {
 }
 
 /** Display price dari USD. Pakai ini di semua halaman (bukan usd() langsung). */
-export function Price({ usdAmount }: { usdAmount: number }) {
+export function Price({ usdAmount, compareAt }: { usdAmount: number; compareAt?: number }) {
   const cur = useDisplayCurrency();
-  return <>{money(usdAmount, cur)}</>;
+  return (
+    <>
+      {money(usdAmount, cur)}
+      {compareAt && compareAt > usdAmount && (
+        <span className="ml-2 font-normal opacity-50 line-through">{money(compareAt, cur)}</span>
+      )}
+    </>
+  );
 }
 
 export function CurrencySelector() {

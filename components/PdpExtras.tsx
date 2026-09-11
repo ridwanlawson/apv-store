@@ -5,7 +5,7 @@ import { Price } from "@/lib/currency";
 import { useT } from "@/lib/i18n";
 import { getReviews, stars } from "@/lib/reviews";
 import { Reveal } from "@/components/Reveal";
-import type { Product } from "@/lib/products";
+import { type Product, mainImage } from "@/lib/products";
 
 // PDP richness: video inline + stok real + review + UGC + cross-sell.
 export function PdpExtras({ p, others }: { p: Product; others: Product[] }) {
@@ -18,7 +18,7 @@ export function PdpExtras({ p, others }: { p: Product; others: Product[] }) {
         <div>
           <h2 className="font-display text-2xl">{t("inMotion")}</h2>
           {p.video ? (
-            <video src={p.video} controls playsInline preload="none" poster={p.images[0]}
+            <video src={p.video} controls playsInline preload="none" poster={mainImage(p)}
               className="mt-3 aspect-video w-full rounded-2xl border border-white/10 bg-black" />
           ) : (
             <p className="mt-3 rounded-2xl border border-white/10 p-6 text-sm opacity-60">{t("videoSoon")}</p>
@@ -78,7 +78,7 @@ export function PdpExtras({ p, others }: { p: Product; others: Product[] }) {
         <div className="mt-4 grid grid-cols-4 gap-2">
           {others.slice(0, 4).map((o) => (
             <div key={o.id} className="relative aspect-square overflow-hidden rounded-xl">
-              <Image src={o.images[0]} alt={`${o.name} on customer`} fill className="object-cover" sizes="25vw" loading="lazy" />
+              <Image src={mainImage(o)} alt={`${o.name} on customer`} fill className="object-cover" sizes="25vw" loading="lazy" />
             </div>
           ))}
         </div>
@@ -92,7 +92,7 @@ export function PdpExtras({ p, others }: { p: Product; others: Product[] }) {
           {others.slice(0, 3).map((o) => (
             <Link key={o.id} href={`/product/${o.slug}`} className="flex items-center gap-3 rounded-2xl border border-white/10 p-3 hover:bg-white/5">
               <div className="relative h-16 w-12 shrink-0 overflow-hidden rounded-lg">
-                <Image src={o.images[0]} alt={o.name} fill className="object-cover" sizes="100px" loading="lazy" />
+                <Image src={mainImage(o)} alt={o.name} fill className="object-cover" sizes="100px" loading="lazy" />
               </div>
               <div className="text-sm">
                 <p className="font-semibold">{o.name}</p>

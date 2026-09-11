@@ -6,12 +6,12 @@ export interface Product {
   name: string;
   slug: string;
   priceUsd: number;
-  compareAt?: number;
+  compareAt?: number; // harga coret (diskon). Checkout selalu pakai priceUsd.
   weightG: number;
   type: ProductType;
   stockQty?: number;
   podSku?: string;
-  images: string[];
+  images: string[]; // [0] = utama. Kosong = belum ada foto (gunakan mainImage()).
   video?: string; // mp4 inline di PDP (352p–720p, <3MB)
   sizes: string[];
   colors: string[];
@@ -20,6 +20,16 @@ export interface Product {
   isSample: boolean;
   published: boolean;
 }
+
+/** Gambar utama aman (fallback bila produk belum punya foto). */
+export const NO_PHOTO =
+  "data:image/svg+xml," +
+  encodeURIComponent(
+    `<svg xmlns="http://www.w3.org/2000/svg" width="600" height="800"><rect width="600" height="800" fill="#1A1816"/><text x="300" y="400" fill="#EDEAE4" font-family="sans-serif" font-size="28" text-anchor="middle">No photo yet</text></svg>`
+  );
+
+export const mainImage = (p: Pick<Product, "images">): string =>
+  p.images[0] ?? NO_PHOTO;
 
 const u = (id: string) =>
   `https://images.unsplash.com/${id}?auto=format&fit=crop&w=900&q=80`;
