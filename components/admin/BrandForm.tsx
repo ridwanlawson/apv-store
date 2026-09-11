@@ -1,36 +1,62 @@
 "use client";
 import { useState } from "react";
-import { useBrand, saveBrand, resetBrand, fileToDataUrl } from "@/lib/brand-store";
+import { useBrand, saveBrand, resetBrand, fileToDataUrl, type BrandOverride } from "@/lib/brand-store";
+import type { BrandConfig } from "@/brands";
+
+export interface BrandFormInitial {
+  brandId: string;
+  name: string;
+  tagline: string;
+  contact: string;
+  logo: string;
+  logoFull: string;
+  favicon: string;
+  colors: BrandConfig["colors"];
+  hero: { headline: string; sub: string; cta: string };
+}
 
 // Tab Brand: identitas, 3 logo, warna, hero — semua tanpa coding.
-export function BrandForm() {
+// Tanpa props = brand aktif (tab Tampilan). Dengan props = brand mana pun (superadmin).
+export function BrandForm({ initial, onSave, onReset, submitLabel = "Simpan tampilan" }: {
+  initial?: BrandFormInitial;
+  onSave?: (patch: BrandOverride) => Promise<void>;
+  onReset?: () => void;
+  submitLabel?: string;
+} = {}) {
   const b = useBrand();
-  const [name, setName] = useState(b.name);
-  const [tagline, setTagline] = useState(b.tagline);
-  const [contact, setContact] = useState(b.contact);
-  const [logo, setLogo] = useState(b.logo ?? "");
-  const [logoFull, setLogoFull] = useState(b.logoFull ?? "");
-  const [favicon, setFavicon] = useState(b.favicon ?? "");
-  const [colors, setColors] = useState({ ...b.colors });
-  const [hero, setHero] = useState({ ...b.hero });
+  const src: BrandFormInitial = initial ?? {
+    brandId: b.id, name: b.name, tagline: b.tagline, contact: b.contact,
+    logo: b.logo ?? "", logoFull: b.logoFull ?? "", favicon: b.favicon ?? "",
+    colors: b.colors, hero: b.hero,
+  };
+  const [name, setName] = useState(src.name);
+  const [tagline, setTagline] = useState(src.tagline);
+  const [contact, setContact] = useState(src.contact);
+  const [logo, setLogo] = useState(src.logo);
+  const [logoFull, setLogoFull] = useState(src.logoFull);
+  const [favicon, setFavicon] = useState(src.favicon);
+  const [colors, setColors] = useState({ ...src.colors });
+  const [hero, setHero] = useState({ ...src.hero });
   const [msg, setMsg] = useState("");
   const [saved, setSaved] = useState(false);
   const [saving, setSaving] = useState(false);
 
   // Sinkron sekali saat brand berubah dari luar (hindari timpa ketikan).
-  const [synced, setSynced] = useState(b.name);
-  if (synced !== b.name && document.activeElement?.tagName !== "INPUT") {
-    setSynced(b.name);
-    setName(b.name); setTagline(b.tagline); setContact(b.contact);
-    setLogo(b.logo ?? ""); setLogoFull(b.logoFull ?? ""); setFavicon(b.favicon ?? "");
-    setColors({ ...b.colors }); setHero({ ...b.hero });
+  const [synced, setSynced] = useState(src.name + src.brandId);
+  if (synced !== src.name + src.brandId && document.activeElement?.tagName !== "INPUT") {
+    setSynced(src.name + src.brandId);
+    setName(src.name); setTagline(src.tagline); setContact(src.contact);
+    setLogo(src.logo); setLogoFull(src.logoFull); setFavicon(src.favicon);
+    setColors({ ...src.colors }); setHero({ ...src.hero });
   }
 
   const save = async () => {
     setSaving(true);
     setMsg("");
     try {
-      await saveBrand({ name, tagline, contact, logo, logoFull, favicon, colors, hero });
+      const patch = { name, tagline, contact, logo, logoFull, favicon, colors, hero };
+      if (onSave) await onSave(patch);
+      else await saveBrand(patch, src.brandId);
       setSaved(true);
       setTimeout(() => setSaved(false), 1500);
     } catch (e) {
@@ -132,13 +158,13 @@ export function BrandForm() {
       {msg && <p role="alert" className="text-sm text-red-400">{msg}</p>}
       <div className="flex gap-2">
         <button onClick={() => void save()} disabled={saving} className="rounded-xl bg-white px-6 py-3 font-bold text-black cursor-pointer disabled:opacity-50">
-          {saving ? "Menyimpan…" : saved ? "Tersimpan ✓" : "Simpan tampilan"}
+          {saving ? "Menyimpan…" : saved ? "Tersimpan ✓" : submitLabel}
         </button>
-        <button onClick={() => { resetBrand(); setMsg(""); }} className="rounded-xl border border-white/20 px-6 py-3 cursor-pointer">
+        <button onClick={() => { if (onReset) onReset(); else resetBrand(src.brandId); setMsg(""); }} className="rounded-xl border border-white/20 px-6 py-3 cursor-pointer">
           Reset default
         </button>
       </div>
-      <p className="text-xs opacity-50">Tersimpan di browser ini + langsung tampil di semua halaman. Versi permanen multi-device ikut Supabase tahap berikutnya.</p>
+      <p className="text-xs opacity-50">Langsung tampil di semua halaman. Permanen multi-device bila login (Supabase).</p>
     </div>
   );
 }

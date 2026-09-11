@@ -136,17 +136,17 @@ export function ScrollSequence({
   }
 
   return (
-    <section ref={wrapRef} aria-label="Scroll to rotate product" className="relative" style={{ height: "340vh", background: "#EDEAE4", color: "#111" }}>
+    <section ref={wrapRef} aria-label="Scroll to rotate product" className="seq-stage relative" style={{ height: "340vh", background: "#EDEAE4", color: "#111" }}>
       <div className="sticky top-0 flex h-screen flex-col overflow-hidden supports-[height:100svh]:h-[100svh]">
         {/* studio sweep: pool bayangan lembut agar kaos hitam terbaca */}
-        <div className="pointer-events-none absolute left-1/2 top-[16%] h-[62vmin] w-[86vmin] max-w-[720px] -translate-x-1/2 rounded-[50%] bg-black/[0.07] blur-2xl" />
+        <div className="soft-glow pointer-events-none absolute left-1/2 top-[16%] h-[62vmin] w-[86vmin] max-w-[720px] -translate-x-1/2 rounded-[50%] bg-black/[0.07] blur-2xl" />
         {/* poster behind canvas until first draw — cover, tanpa band */}
         {!drawn && (
           // eslint-disable-next-line @next/next/no-img-element
           <img src={`/seq/${seq}/${pad(1)}.${ext}`} alt="" aria-hidden
             className="pointer-events-none absolute inset-0 h-full w-full object-cover md:object-contain" />
         )}
-        <canvas ref={canvasRef} className="w-full flex-1 drop-shadow-[0_24px_45px_rgba(0,0,0,0.35)]" aria-label={`Product view ${frame} of ${frames}`} role="img" />
+        <canvas ref={canvasRef} className="seq-shadow w-full flex-1" aria-label={`Product view ${frame} of ${frames}`} role="img" />
 
         {/* headline overlay: panel frosted rapi kiri-atas, fade saat scroll */}
         <div className="pointer-events-none absolute inset-x-0 top-[100px] px-4 pt-2 transition-opacity sm:top-16 sm:pt-6" style={{ opacity: heroOpacity }} aria-hidden={heroOpacity === 0}>

@@ -4,6 +4,7 @@
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { products as seed, type Product } from "./products";
 import { fetchAllProducts, toProduct, upsertProduct, deleteProductRow, getSession } from "./supabase";
+import { useBrand } from "./brand-store";
 
 /** true hanya setelah hydrate — pakai ini untuk render data client (anti hydration-mismatch). */
 export function useMounted() {
@@ -21,40 +22,51 @@ export function useVisibleProducts(): Product[] {
   return (mounted ? items : seed).filter((p) => p.published);
 }
 
-const KEY = "apv-products-v2"; // bump saat seed berubah agar cache lama terbuang
+const KEY = "apv-products-v2"; // legacy global (migrasi sekali ke per-brand)
+const keyFor = (id: string) => `apv-products-${id}`;
 
-function load(): Product[] {
+function load(brandId: string, isSeedBrand: boolean): Product[] {
   try {
-    if (typeof window === "undefined") return seed;
-    const raw = localStorage.getItem(KEY);
-    if (!raw) return seed;
+    if (typeof window === "undefined") return isSeedBrand ? seed : [];
+    const raw =
+      localStorage.getItem(keyFor(brandId)) ?? localStorage.getItem(KEY);
+    if (!raw) return isSeedBrand ? seed : [];
     const parsed = JSON.parse(raw) as Product[];
-    return Array.isArray(parsed) && parsed.length > 0 ? parsed : seed;
+    if (!Array.isArray(parsed) || parsed.length === 0) return isSeedBrand ? seed : [];
+    // Adopsi cache global lama ke kunci per-brand.
+    try {
+      localStorage.setItem(keyFor(brandId), JSON.stringify(parsed));
+    } catch {
+      /* abaikan */
+    }
+    return parsed;
   } catch {
-    return seed;
+    return isSeedBrand ? seed : [];
   }
 }
 
 export function useProductStore() {
-  // Lazy init (SSR: seed, client: localStorage). Tanpa setState di effect.
+  const { id: brandId } = useBrand();
+  const isSeedBrand = brandId === (seed[0]?.brandId ?? "a-private-violence");
+  // Lazy init (SSR: seed brand / kosong). Tanpa setState di effect.
   const [items, setItems] = useState<Product[]>(() =>
-    typeof window === "undefined" ? seed : load()
+    typeof window === "undefined" ? (isSeedBrand ? seed : []) : load(brandId, isSeedBrand)
   );
   const mounted = useMounted();
   const itemsRef = useRef<Product[]>(items);
   useEffect(() => {
     itemsRef.current = items;
     try {
-      localStorage.setItem(KEY, JSON.stringify(items));
+      localStorage.setItem(keyFor(brandId), JSON.stringify(items));
     } catch {
       /* storage penuh -> abaikan */
     }
-  }, [items]);
+  }, [items, brandId]);
   // Sinkron dari DB sekali setelah mount bila ada sesi (admin login).
   // DB ada isi -> pakai DB. DB kosong -> bootstrap: dorong lokal ke DB (migrasi pertama).
   useEffect(() => {
     if (!mounted || !getSession()) return;
-    fetchAllProducts(seed[0]?.brandId ?? "a-private-violence")
+    fetchAllProducts(brandId)
       .then((rows) => {
         if (rows && rows.length > 0) {
           setItems(rows.map(toProduct));
@@ -82,7 +94,7 @@ export function useProductStore() {
         }
       })
       .catch(() => { /* offline / belum ada akses -> tetap lokal */ });
-  }, [mounted]);
+  }, [mounted, brandId]);
   return { items, setItems };
 }
 

@@ -34,7 +34,7 @@ export function ProductModal({ p, onClose }: { p: Product | null; onClose: () =>
         <motion.div onClick={(e) => e.stopPropagation()}
           initial={{ y: 60, opacity: 0, scale: 0.98 }} animate={{ y: 0, opacity: 1, scale: 1 }} exit={{ y: 40, opacity: 0 }}
           transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
-          className="grid max-h-[92vh] w-full max-w-3xl grid-cols-1 overflow-auto rounded-t-2xl bg-[#141210] sm:grid-cols-2 sm:rounded-2xl">
+          className="grid max-h-[92vh] w-full max-w-3xl grid-cols-1 overflow-auto rounded-t-2xl bg-[#141210] sm:grid-cols-2 sm:rounded-2xl" data-lenis-prevent>
           <div className="relative aspect-[3/4] bg-black">
             <Image key={img} src={p.images.length ? p.images[img % p.images.length] : mainImage(p)} alt={`${p.name} view ${img + 1}`} fill className="object-cover" sizes="50vw" />
             {p.images.length > 1 && (

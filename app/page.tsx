@@ -53,7 +53,7 @@ export default function Home() {
           </div>
           <Link href="/shop" className="text-sm underline underline-offset-4">{t("viewAll")}</Link>
         </Reveal>
-        <div className="no-scrollbar -mx-4 flex snap-x snap-mandatory gap-4 overflow-x-auto px-4 pb-2">
+        <div className="no-scrollbar -mx-4 flex snap-x snap-mandatory gap-4 overflow-x-auto px-4 pb-2" data-lenis-prevent>
           {drop.map((p) => (
             <div key={p.id} className="w-[240px] shrink-0 snap-start sm:w-[280px]">
               <ProductCard p={p} onQuickView={setQuick} />

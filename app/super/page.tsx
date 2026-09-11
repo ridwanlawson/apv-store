@@ -1,45 +1,211 @@
 "use client";
+import { useEffect, useState } from "react";
 import Link from "next/link";
-import { listBrands } from "@/brands";
-import { useBrand } from "@/lib/brand-store";
-import { supabaseConfigured } from "@/lib/supabase";
-import { useVisibleProducts } from "@/lib/store";
+import { useAuth } from "@/lib/auth";
+import { useMounted } from "@/lib/store";
+import { getSession } from "@/lib/supabase";
+import {
+  fetchAllBrands, createBrandRow, updateBrandRow, deleteBrandRow, fetchOwnRole,
+  type BrandAdminRow,
+} from "@/lib/supabase";
+import { BrandForm, type BrandFormInitial } from "@/components/admin/BrandForm";
+import { saveBrand } from "@/lib/brand-store";
 
-// Superadmin Hub: status live per brand + jalan pintas.
-// Multi-brand penuh (deploy per brand + domain) = fase aktivasi saat brand ke-2 bayar.
+// Superadmin Hub: tambah/edit/aktif/nonaktif/hapus brand TANPA coding.
+// Akses: login + role superadmin (profiles). brand_admin diarahkan ke /admin.
 export default function Super() {
-  const brands = listBrands();
-  const live = useBrand();
-  const products = useVisibleProducts();
-  const db = supabaseConfigured();
+  const { user } = useAuth();
+  const mounted = useMounted();
+  const [role, setRole] = useState<string | null>(null);
+  const [rows, setRows] = useState<BrandAdminRow[] | null>(null);
+  const [err, setErr] = useState("");
+  const [creating, setCreating] = useState(false);
+  const [editing, setEditing] = useState<string | null>(null);
+  const [form, setForm] = useState({ id: "", name: "", slug: "", template: "brutal", currency: "USD", domain: "", active: true });
+
+  useEffect(() => {
+    let live = true;
+    if (!mounted || !user || !getSession()) return;
+    fetchOwnRole()
+      .then((r) => { if (live) setRole(r); })
+      .catch(() => { if (live) setRole(null); });
+    return () => { live = false; };
+  }, [mounted, user]);
+
+  const reload = () => {
+    fetchAllBrands()
+      .then((r) => setRows(r ?? []))
+      .catch(() => setErr("Gagal baca brands (cek patch-005)."));
+  };
+  useEffect(() => {
+    if (role === "superadmin") reload();
+  }, [role]);
+
+  if (!mounted) return <main className="mx-auto max-w-4xl px-4 py-10"><p>Loading…</p></main>;
+  if (!user) {
+    return (
+      <main className="mx-auto max-w-sm px-4 py-20">
+        <h1 className="font-display text-3xl">SUPERADMIN</h1>
+        <p className="mt-2 text-sm opacity-60">Login dulu via <Link href="/admin" className="underline">/admin</Link> (magic link), lalu kembali ke sini.</p>
+      </main>
+    );
+  }
+  if (role !== "superadmin") {
+    return (
+      <main className="mx-auto max-w-sm px-4 py-20">
+        <h1 className="font-display text-3xl">SUPERADMIN</h1>
+        <p className="mt-2 text-sm opacity-60">
+          Akun <b>{user.email}</b> role: <b>{role ?? "belum terdaftar"}</b>. Halaman ini khusus superadmin.
+          Kelola tokomu di <Link href="/admin" className="underline">/admin</Link>.
+        </p>
+      </main>
+    );
+  }
+
+  const startCreate = () => {
+    setForm({ id: "", name: "", slug: "", template: "brutal", currency: "USD", domain: "", active: false });
+    setCreating(true);
+    setErr("");
+  };
+
+  const doCreate = async () => {
+    const id = form.slug.trim().toLowerCase().replace(/[^a-z0-9-]+/g, "-").replace(/(^-|-$)/g, "");
+    if (!/^[a-z0-9-]{3,32}$/.test(id)) { setErr("Slug 3–32 karakter a-z/0-9/-."); return; }
+    if (!form.name.trim()) { setErr("Nama wajib diisi."); return; }
+    setErr("");
+    try {
+      await createBrandRow({
+        id,
+        name: form.name.trim(),
+        slug: id,
+        template: form.template === "minimal" ? "minimal" : "brutal",
+        currency: form.currency || "USD",
+        domain: form.domain.trim().toLowerCase(),
+        active: form.active,
+        config: { tagline: "", contact: "", colors: {}, hero: {} },
+      });
+      setCreating(false);
+      reload();
+    } catch {
+      setErr("Gagal buat brand (cek patch-005 + role superadmin).");
+    }
+  };
+
+  const rowToInitial = (r: BrandAdminRow): BrandFormInitial => {
+    const c = (r.config ?? {}) as Record<string, unknown>;
+    const colors = (c.colors ?? {}) as Record<string, string>;
+    const hero = (c.hero ?? {}) as Record<string, string>;
+    return {
+      brandId: r.id,
+      name: r.name,
+      tagline: (c.tagline as string) ?? "",
+      contact: (c.contact as string) ?? "",
+      logo: (c.logo as string) ?? "",
+      logoFull: (c.logoFull as string) ?? "",
+      favicon: (c.favicon as string) ?? "",
+      colors: {
+        bg: colors.bg ?? "#0A0A0A", fg: colors.fg ?? "#EDEAE4",
+        muted: colors.muted ?? "#1A1816", accent: colors.accent ?? "#C1121F",
+      },
+      hero: { headline: hero.headline ?? r.name, sub: hero.sub ?? "", cta: hero.cta ?? "Shop" },
+    };
+  };
+
+  const input = "w-full rounded-lg border border-white/15 bg-white/5 px-3 py-2.5 text-sm outline-none focus:border-white/50";
+
   return (
     <main className="mx-auto max-w-4xl px-4 py-10">
-      <h1 className="font-display text-3xl">SUPERADMIN HUB</h1>
-      <p className="text-sm opacity-60">1 brand live now, multi-brand ready (brand_id everywhere).</p>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h1 className="font-display text-3xl">SUPERADMIN HUB</h1>
+          <p className="text-sm opacity-60">{user.email} · superadmin · {rows?.length ?? 0} brand</p>
+        </div>
+        <button onClick={startCreate} className="rounded-xl bg-white px-5 py-2.5 text-sm font-bold text-black cursor-pointer">+ Brand baru</button>
+      </div>
+      {err && <p role="alert" className="mt-3 text-sm text-red-400">{err}</p>}
+
+      {creating && (
+        <div className="mt-4 rounded-xl border border-white/25 bg-white/[0.03] p-4">
+          <p className="font-bold">Brand baru (nonaktif dulu sampai siap)</p>
+          <div className="mt-2 grid gap-2 sm:grid-cols-2">
+            <label className="text-xs opacity-70">Nama<input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className={`mt-1 ${input}`} /></label>
+            <label className="text-xs opacity-70">Slug/id (domain alternatif)<input value={form.slug} onChange={(e) => setForm({ ...form, slug: e.target.value })} placeholder="brand-kedua" className={`mt-1 ${input}`} /></label>
+            <label className="text-xs opacity-70">Template
+              <select value={form.template} onChange={(e) => setForm({ ...form, template: e.target.value })} className="mt-1 w-full rounded-lg border border-white/15 bg-black px-3 py-2.5 text-sm">
+                <option value="brutal">brutal</option><option value="minimal">minimal</option>
+              </select></label>
+            <label className="text-xs opacity-70">Currency<input value={form.currency} onChange={(e) => setForm({ ...form, currency: e.target.value.toUpperCase() })} className={`mt-1 ${input}`} /></label>
+            <label className="text-xs opacity-70 sm:col-span-2">Custom domain (opsional, pasang DNS dulu)<input value={form.domain} onChange={(e) => setForm({ ...form, domain: e.target.value })} placeholder="shop.brand.com" className={`mt-1 ${input}`} /></label>
+          </div>
+          <div className="mt-3 flex gap-2">
+            <button onClick={() => void doCreate()} className="rounded-lg bg-white px-5 py-2.5 text-sm font-bold text-black cursor-pointer">Buat brand</button>
+            <button onClick={() => setCreating(false)} className="rounded-lg border border-white/20 px-5 py-2.5 text-sm cursor-pointer">Batal</button>
+          </div>
+        </div>
+      )}
+
       <div className="mt-6 flex flex-col gap-3">
-        {brands.map((b) => (
-          <div key={b.id} className="rounded-xl border border-white/10 p-4">
-            <p className="font-bold">{live.name} <span className="opacity-50">· /{b.template} · {b.currency} · {b.shippingOrigin}</span></p>
-            <p className="text-sm opacity-60">{live.seo.description}</p>
-            <div className="mt-2 flex flex-wrap gap-2 text-sm">
-              <span className="rounded-full border border-white/20 px-3 py-1">Template: {b.template}</span>
-              <span className="rounded-full border border-white/20 px-3 py-1">Payments: HOLD (mock)</span>
-              <span className="rounded-full border border-white/20 px-3 py-1">DB: {db ? "● Supabase" : "○ lokal"}</span>
-              <span className="rounded-full border border-white/20 px-3 py-1">Produk tampil: {products.length}</span>
+        {rows === null && <p className="opacity-60">Memuat… (butuh patch-005 + login)</p>}
+        {rows?.map((r) => (
+          <div key={r.id}>
+            <div className="flex flex-wrap items-center gap-3 rounded-xl border border-white/10 p-4 text-sm">
+              <div className="flex-1">
+                <b>{r.name}</b>{" "}
+                <span className={`rounded-full px-2 py-0.5 text-[11px] font-bold ${r.active ? "bg-green-500/20 text-green-300" : "bg-white/10 opacity-60"}`}>
+                  {r.active ? "AKTIF" : "NONAKTIF"}
+                </span>
+                <p className="mt-1 opacity-50">/{r.slug} · {r.template} · {r.currency} · {r.domain || "belum ada domain"}</p>
+              </div>
+              <button onClick={() => {
+                updateBrandRow(r.id, { active: !r.active })
+                  .then(reload)
+                  .catch(() => setErr("Gagal ubah status."));
+              }} className="rounded-lg border border-white/20 px-3 py-1.5 cursor-pointer">
+                {r.active ? "Nonaktifkan" : "Aktifkan"}
+              </button>
+              <button onClick={() => setEditing((e) => (e === r.id ? null : r.id))}
+                className="rounded-lg border border-white/20 px-3 py-1.5 cursor-pointer">Edit</button>
+              <button onClick={() => {
+                if (!window.confirm(`Hapus brand ${r.name}? Produk/order yatim tetap di DB.`)) return;
+                deleteBrandRow(r.id).then(reload).catch(() => setErr("Gagal hapus."));
+              }} className="rounded-lg border border-red-400/40 px-3 py-1.5 cursor-pointer">Hapus</button>
             </div>
-            <div className="mt-3 flex flex-wrap gap-2 text-sm">
-              <Link href="/admin" className="rounded-lg bg-white px-4 py-2 font-bold text-black">Kelola brand →</Link>
-              <Link href="/" className="rounded-lg border border-white/20 px-4 py-2">Lihat toko →</Link>
-            </div>
+            {editing === r.id && (
+              <div className="mt-2 rounded-xl border border-white/10 p-4">
+                <div className="grid gap-2 sm:grid-cols-3">
+                  <label className="text-xs opacity-70">Domain<input defaultValue={r.domain} id={`dom-${r.id}`} className={`mt-1 ${input}`} /></label>
+                  <label className="text-xs opacity-70">Template
+                    <select defaultValue={r.template} id={`tpl-${r.id}`} className="mt-1 w-full rounded-lg border border-white/15 bg-black px-3 py-2.5 text-sm">
+                      <option value="brutal">brutal</option><option value="minimal">minimal</option>
+                    </select></label>
+                  <label className="text-xs opacity-70">Currency
+                    <input defaultValue={r.currency} id={`cur-${r.id}`} className={`mt-1 ${input}`} /></label>
+                </div>
+                <button onClick={() => {
+                  const dom = (document.getElementById(`dom-${r.id}`) as HTMLInputElement)?.value.trim().toLowerCase() ?? "";
+                  const tpl = (document.getElementById(`tpl-${r.id}`) as HTMLSelectElement)?.value ?? "brutal";
+                  const cur = (document.getElementById(`cur-${r.id}`) as HTMLInputElement)?.value.trim().toUpperCase() || "USD";
+                  updateBrandRow(r.id, { domain: dom, template: tpl, currency: cur }).then(reload).catch(() => setErr("Gagal simpan."));
+                }} className="mt-2 rounded-lg bg-white px-4 py-2 text-sm font-bold text-black cursor-pointer">Simpan kolom</button>
+                <div className="mt-4">
+                  <p className="mb-2 text-sm font-bold">Tampilan & konten</p>
+                  <BrandForm
+                    key={r.id}
+                    initial={rowToInitial(r)}
+                    submitLabel="Simpan brand"
+                    onSave={async (patch) => { await saveBrand(patch, r.id); reload(); }}
+                    onReset={() => { reload(); }}
+                  />
+                </div>
+              </div>
+            )}
           </div>
         ))}
       </div>
-      <div className="mt-6 rounded-xl border border-white/10 p-4 text-sm opacity-70">
-        <p className="font-bold">Aktivasi brand ke-2 (saat dibutuhkan)</p>
-        <p className="mt-1">1. Copy brands/_template.ts → brands/&lt;id&gt;.ts + daftar di brands/index.ts ·
-          2. ENV NEXT_PUBLIC_BRAND=&lt;id&gt; · 3. Deploy Vercel baru + domain ·
-          4. Insert profiles role + seed katalog. Tanpa ubah komponen.</p>
-      </div>
+      <p className="mt-6 text-xs opacity-50">
+        Brand aktif + domain terpasang = langsung tayang di 1 deploy ini (resolusi domain, cache 60 detik).
+        Nonaktif = domain-nya tampil halaman nonaktif. Tanpa coding, tanpa deploy ulang.
+      </p>
     </main>
   );
 }

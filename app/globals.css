@@ -11,6 +11,17 @@
 html { scroll-behavior: smooth; }
 body { text-rendering: optimizeLegibility; }
 
+/* Kanvas sequence: gesture vertikal selalu milik page (scroll HP tidak dimakan). */
+.seq-stage, .seq-stage canvas { touch-action: pan-y; }
+
+/* Bayangan kaos: drop-shadow GPU di desktop, dimatikan di HP (hemat baterai/GPU). */
+.seq-shadow { filter: drop-shadow(0 24px 45px rgba(0,0,0,0.35)); }
+@media (pointer: coarse) {
+  .seq-shadow { filter: none; }
+  .soft-glow { display: none; }
+  .marquee { animation-duration: 34s; }
+}
+
 /* thin brutal scrollbar */
 ::-webkit-scrollbar { height: 8px; width: 10px; }
 ::-webkit-scrollbar-thumb { background: #333; border-radius: 8px; }

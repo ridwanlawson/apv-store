@@ -20,6 +20,7 @@ export interface BrandConfig {
   logo?: string; // emblem tengah navbar, mis. /brands/a-private-violence/logo.webp
   logoFull?: string; // lockup penuh untuk footer
   favicon?: string; // default = logo
+  active?: boolean; // false = nonaktif (disembunyikan storefront). Default true.
   sequence?: string; // folder di public/seq/<id>/ (scroll-3D), kosong = section disembunyikan
   seo: { title: string; description: string };
   shippingOrigin: string;

@@ -23,7 +23,7 @@ export function SizeGuideModal({ open, category, onClose }: { open: boolean; cat
           <motion.div onClick={(e) => e.stopPropagation()}
             initial={{ y: 60, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 40, opacity: 0 }}
             transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
-            className="max-h-[92vh] w-full max-w-2xl overflow-auto rounded-t-2xl bg-[#141210] p-5 sm:rounded-2xl sm:p-6">
+            className="max-h-[92vh] w-full max-w-2xl overflow-auto rounded-t-2xl bg-[#141210] p-5 sm:rounded-2xl sm:p-6" data-lenis-prevent>
             <div className="mb-4 flex items-center justify-between">
               <h2 className="font-display text-2xl tracking-wide">SIZE GUIDE</h2>
               <button onClick={onClose} aria-label="Close size guide" className="cursor-pointer rounded-full border border-white/20 px-3 py-1 hover:bg-white/10">✕</button>
