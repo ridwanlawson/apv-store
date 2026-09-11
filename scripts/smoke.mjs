@@ -49,6 +49,15 @@ assert.ok(existsSync(join(root, "supabase/patch-002-rbac.sql")), "patch-002 miss
 assert.ok(read("lib/supabase.ts").includes("is_brand_admin") || read("lib/supabase.ts").includes("fetchAllProducts"), "supabase admin fns missing");
 assert.ok(read("lib/store.ts").includes("persistProduct"), "store persist missing");
 
+// 10. Audit fixes: guards, compareAt, decrement, track lokal, super hidup
+assert.ok(read("lib/products.ts").includes("mainImage"), "mainImage missing");
+assert.ok(!read("app/admin/page.tsx").includes("images: [\"https://images.unsplash.com"), "auto-image masih ada");
+assert.ok(existsSync(join(root, "supabase/patch-003-stock.sql")), "patch-003 missing");
+assert.ok(read("lib/supabase.ts").includes("decrementStock"), "decrementStock missing");
+assert.ok(read("app/api/checkout/route.ts").includes("decrementStock"), "checkout decrement missing");
+assert.ok(read("app/track-order/page.tsx").includes("listOrders"), "track lokal missing");
+assert.ok(read("app/super/page.tsx").includes("useBrand"), "super mati");
+
 // 7. Size guide: data + UI terpasang di PDP, quick-view, footer
 assert.ok(read("lib/sizeguide.ts").includes("recommendTop"), "size data missing");
 for (const p of ["components/SizeGuideContent.tsx", "components/SizeGuideModal.tsx", "app/size-guide/page.tsx"]) {

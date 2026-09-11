@@ -11,6 +11,7 @@ export function ProductEditor({ p, onSave, onCancel }: {
 }) {
   const [name, setName] = useState(p.name);
   const [price, setPrice] = useState(String(p.priceUsd));
+  const [compareAt, setCompareAt] = useState(p.compareAt ? String(p.compareAt) : "");
   const [fabric, setFabric] = useState(p.fabric);
   const [badge, setBadge] = useState(p.badge ?? "");
   const [type, setType] = useState<ProductType>(p.type);
@@ -41,13 +42,16 @@ export function ProductEditor({ p, onSave, onCancel }: {
 
   const save = () => {
     const num = Math.round(Number(price));
+    const cat = compareAt.trim() === "" ? undefined : Math.round(Number(compareAt));
     if (!name.trim()) { setErr("Nama wajib diisi."); return; }
     if (!Number.isFinite(num) || num < 1 || num > 9999) { setErr("Harga USD 1–9999."); return; }
+    if (cat !== undefined && (!Number.isFinite(cat) || cat <= num)) { setErr("Harga coret harus > harga jual."); return; }
     if (images.length === 0) { setErr("Minimal 1 gambar."); return; }
     onSave({
       ...p,
       name: name.trim(),
       priceUsd: num,
+      compareAt: cat,
       fabric: fabric.trim() || "Cotton",
       badge: badge.trim(),
       type,
@@ -64,9 +68,11 @@ export function ProductEditor({ p, onSave, onCancel }: {
   return (
     <div className="rounded-xl border border-white/25 bg-white/[0.03] p-4">
       <p className="font-bold">Edit: {p.name}</p>
+      <p className="text-xs opacity-50">slug: /product/{p.slug} · id: {p.id.slice(0, 8)}…</p>
       <div className="mt-3 grid gap-2 sm:grid-cols-2">
         <label className="text-xs opacity-70">Nama<input value={name} onChange={(e) => setName(e.target.value)} className={`mt-1 ${input}`} /></label>
         <label className="text-xs opacity-70">Harga (USD)<input value={price} onChange={(e) => setPrice(e.target.value)} inputMode="numeric" className={`mt-1 ${input}`} /></label>
+        <label className="text-xs opacity-70">Harga coret (opsional)<input value={compareAt} onChange={(e) => setCompareAt(e.target.value)} inputMode="numeric" placeholder="mis. 59" className={`mt-1 ${input}`} /></label>
         <label className="text-xs opacity-70">Bahan<input value={fabric} onChange={(e) => setFabric(e.target.value)} className={`mt-1 ${input}`} /></label>
         <label className="text-xs opacity-70">Badge<input value={badge} onChange={(e) => setBadge(e.target.value)} placeholder="POD Worldwide / Limited Indonesia" className={`mt-1 ${input}`} /></label>
         <label className="text-xs opacity-70">Tipe

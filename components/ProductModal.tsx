@@ -7,7 +7,7 @@ import { Price, money, useDisplayCurrency } from "@/lib/currency";
 import { useT } from "@/lib/i18n";
 import { categoryForProduct } from "@/lib/sizeguide";
 import { SizeGuideModal } from "./SizeGuideModal";
-import { type Product } from "@/lib/products";
+import { type Product, mainImage } from "@/lib/products";
 
 // Quick-view modal: gallery + size + add-to-cart. ponytail: no 3D lib, spin = swipe images.
 export function ProductModal({ p, onClose }: { p: Product | null; onClose: () => void }) {
@@ -36,13 +36,15 @@ export function ProductModal({ p, onClose }: { p: Product | null; onClose: () =>
           transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
           className="grid max-h-[92vh] w-full max-w-3xl grid-cols-1 overflow-auto rounded-t-2xl bg-[#141210] sm:grid-cols-2 sm:rounded-2xl">
           <div className="relative aspect-[3/4] bg-black">
-            <Image key={img} src={p.images[img % p.images.length]} alt={`${p.name} view ${img + 1}`} fill className="object-cover" sizes="50vw" />
+            <Image key={img} src={p.images.length ? p.images[img % p.images.length] : mainImage(p)} alt={`${p.name} view ${img + 1}`} fill className="object-cover" sizes="50vw" />
+            {p.images.length > 1 && (
             <div className="absolute bottom-3 left-1/2 flex -translate-x-1/2 gap-2">
               {p.images.map((_, i) => (
                 <button key={i} onClick={() => setImg(i)} aria-label={`View ${i + 1}`}
                   className={`h-2 w-2 rounded-full cursor-pointer ${i === img % p.images.length ? "bg-white" : "bg-white/40"}`} />
               ))}
             </div>
+            )}
           </div>
           <div className="flex flex-col gap-4 p-5">
             <div className="flex items-start justify-between gap-3">
@@ -53,7 +55,7 @@ export function ProductModal({ p, onClose }: { p: Product | null; onClose: () =>
               </div>
               <button onClick={onClose} aria-label="Close" className="rounded-full border border-white/20 px-3 py-1 cursor-pointer hover:bg-white/10">✕</button>
             </div>
-            <p className="text-xl font-bold"><Price usdAmount={p.priceUsd} /></p>
+            <p className="text-xl font-bold"><Price usdAmount={p.priceUsd} compareAt={p.compareAt} /></p>
             <div>
               <div className="mb-2 flex items-center justify-between">
                 <p className="text-xs tracking-widest opacity-60">{t("size")}</p>
@@ -69,7 +71,7 @@ export function ProductModal({ p, onClose }: { p: Product | null; onClose: () =>
               </div>
             </div>
             <motion.button whileTap={{ scale: 0.97 }} onClick={() => {
-              add({ slug: p.slug, name: p.name, price: p.priceUsd, image: p.images[0], size, qty: 1 });
+              add({ slug: p.slug, name: p.name, price: p.priceUsd, image: mainImage(p), size, qty: 1 });
               setAdded(true); setTimeout(() => { setAdded(false); onClose(); }, 700);
             }} className="mt-auto min-h-[48px] rounded-xl bg-white font-bold text-black cursor-pointer hover:opacity-90">
               {added ? t("added") : `${t("addToCart")} — ${money(p.priceUsd, cur)}`}

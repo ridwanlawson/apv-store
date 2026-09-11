@@ -97,14 +97,15 @@ export async function fetchProducts(brandId: string): Promise<Record<string, unk
 
 /* ---------- checkout (anon) ---------- */
 
-/** Simpan order. Return id. Fallback: id lokal.
+/** Simpan order dengan id eksplisit. Return id.
  * return=minimal + id client: SELECT pasca-insert ditolak RLS (PII). */
-export async function saveOrder(row: Record<string, unknown>): Promise<string> {
+export async function saveOrder(row: Record<string, unknown>, id?: string): Promise<string> {
   if (!supabaseConfigured()) return `LOCAL-${Date.now().toString(36).toUpperCase()}`;
-  const id =
-    typeof crypto !== "undefined" && "randomUUID" in crypto
+  const finalId =
+    id ??
+    (typeof crypto !== "undefined" && "randomUUID" in crypto
       ? crypto.randomUUID()
-      : `LOCAL-${Date.now().toString(36).toUpperCase()}`;
+      : `LOCAL-${Date.now().toString(36).toUpperCase()}`);
   const res = await fetch(`${URL}/rest/v1/orders`, {
     method: "POST",
     headers: {
@@ -113,10 +114,33 @@ export async function saveOrder(row: Record<string, unknown>): Promise<string> {
       "Content-Type": "application/json",
       Prefer: "return=minimal",
     },
-    body: JSON.stringify({ ...row, id }),
+    body: JSON.stringify({ ...row, id: finalId }),
   });
+  if (!res.ok) {
+    const err = new Error(`Supabase ${res.status}`) as Error & { status?: number };
+    err.status = res.status;
+    throw err;
+  }
+  return finalId;
+}
+
+/** Kurangi stok atomik via RPC (patch-003). Throw 409 bila stok kurang. */
+export async function decrementStock(brand: string, slug: string, qty: number): Promise<void> {
+  const res = await fetch(`${URL}/rest/v1/rpc/decrement_stock`, {
+    method: "POST",
+    headers: {
+      apikey: KEY,
+      Authorization: `Bearer ${KEY}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ p_brand: brand, p_slug: slug, p_qty: qty }),
+  });
+  if (res.status === 409 || res.status === 400) {
+    const err = new Error("insufficient stock") as Error & { stock?: boolean };
+    err.stock = true;
+    throw err;
+  }
   if (!res.ok) throw new Error(`Supabase ${res.status}`);
-  return id;
 }
 
 /* ---------- admin (butuh sesi + profiles role, patch-002) ---------- */
@@ -156,6 +180,7 @@ export interface DbProductRow {
   name: string;
   slug: string;
   price_usd: number;
+  compare_at_usd: number | null;
   weight_g: number;
   type: "pod" | "stock";
   pod_sku: string | null;
@@ -189,6 +214,7 @@ export function toProduct(r: DbProductRow): Product {
     name: r.name,
     slug: r.slug,
     priceUsd: r.price_usd,
+    compareAt: r.compare_at_usd ?? undefined,
     weightG: r.weight_g,
     type: r.type,
     stockQty: r.type === "stock" ? r.stock_qty : undefined,
@@ -211,6 +237,7 @@ export function toRow(p: Product): Record<string, unknown> {
     name: p.name,
     slug: p.slug,
     price_usd: p.priceUsd,
+    compare_at_usd: p.compareAt ?? null,
     weight_g: p.weightG,
     type: p.type,
     pod_sku: p.podSku ?? null,

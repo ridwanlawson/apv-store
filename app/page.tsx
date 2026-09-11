@@ -4,13 +4,13 @@ import Link from "next/link";
 import { useState } from "react";
 import { motion } from "motion/react";
 import { useBrand } from "@/lib/brand-store";
+import { type Product, mainImage } from "@/lib/products";
 import { useVisibleProducts } from "@/lib/store";
 import { useT } from "@/lib/i18n";
 import { Reveal } from "@/components/Reveal";
 import { ProductCard } from "@/components/ProductCard";
 import { ProductModal } from "@/components/ProductModal";
 import { ScrollSequence } from "@/components/ScrollSequence";
-import type { Product } from "@/lib/products";
 
 export default function Home() {
   const b = useBrand();
@@ -66,7 +66,7 @@ export default function Home() {
       <section className="mx-auto grid max-w-6xl gap-8 px-4 py-16 md:grid-cols-2">
         <div className="md:sticky md:top-20 md:self-start">
           <div className="relative aspect-[3/4] overflow-hidden rounded-2xl">
-            <Image src={story ? story.images[0] : b.hero.poster} alt="On-body fit" fill className="object-cover" sizes="50vw" loading="lazy" />
+            <Image src={story ? mainImage(story) : b.hero.poster} alt="On-body fit" fill className="object-cover" sizes="50vw" loading="lazy" />
           </div>
         </div>
         <div className="flex flex-col gap-10">

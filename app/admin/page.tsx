@@ -99,21 +99,25 @@ export default function Admin() {
     const num = Number(price);
     if (!clean || !Number.isFinite(num) || num <= 0) return;
     const slug = `${clean.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "")}-${Date.now().toString(36)}`;
+    // Tanpa foto tempelan: editor langsung dibuka agar dilengkapi (wajib >=1 foto).
     const p: Product = {
       id: slug, brandId: "a-private-violence", name: clean, slug, priceUsd: Math.round(num),
       weightG: 300, type, stockQty: type === "stock" ? Math.max(0, Number(stock) || 0) : undefined,
       podSku: type === "pod" ? `APV-${Date.now().toString(36).toUpperCase()}` : undefined,
-      images: ["https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?auto=format&fit=crop&w=900&q=80"],
+      images: [],
       sizes: ["S", "M", "L", "XL"], colors: ["Black"], fabric: "Cotton",
       badge: type === "pod" ? "POD Worldwide" : "Limited Indonesia",
-      isSample: false, published: true,
+      isSample: false, published: false,
     };
     setItems((prev) => [p, ...prev]);
     setName("");
-    // Samakan id DB bila login (best-effort).
+    setEditing(slug);
     persistProduct(p)
       .then((id) => {
-        if (id !== p.id) setItems((prev) => prev.map((x) => (x.id === p.id ? { ...x, id } : x)));
+        if (id !== p.id) {
+          setItems((prev) => prev.map((x) => (x.id === p.id ? { ...x, id } : x)));
+          setEditing((e) => (e === p.id ? id : e));
+        }
       })
       .catch(() => { /* tetap lokal */ });
   };
