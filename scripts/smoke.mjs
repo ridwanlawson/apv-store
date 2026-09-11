@@ -41,13 +41,17 @@ assert.ok(read("lib/currency.tsx").includes("IDR") && layout.includes("CurrencyP
 assert.ok(read("app/shop/page.tsx").includes("aria-pressed"), "shop filter missing");
 assert.ok(read("lib/auth.tsx").includes("magiclink") && read("app/admin/page.tsx").includes("useAuth"), "auth missing");
 assert.ok(read("lib/auth.tsx").includes("access_token"), "magic-link hash handling missing");
-assert.ok(read("lib/brand-store.ts").includes("saveBrand"), "brand store missing");
+assert.ok(read("lib/brand-store.tsx").includes("saveBrand"), "brand store missing");
 assert.ok(existsSync(join(root, "components/admin/BrandForm.tsx")), "brand form missing");
 assert.ok(existsSync(join(root, "components/admin/ProductEditor.tsx")), "product editor missing");
 assert.ok(read("components/Navbar.tsx").includes("useBrand"), "navbar brand wiring missing");
 assert.ok(existsSync(join(root, "supabase/patch-002-rbac.sql")), "patch-002 missing");
 assert.ok(read("lib/supabase.ts").includes("is_brand_admin") || read("lib/supabase.ts").includes("fetchAllProducts"), "supabase admin fns missing");
 assert.ok(read("lib/store.ts").includes("persistProduct"), "store persist missing");
+assert.ok(read("lib/brand-resolve.ts").includes("resolveBrand"), "resolveBrand missing");
+assert.ok(read("lib/brand-store.tsx").includes("BrandProvider"), "BrandProvider missing");
+assert.ok(existsSync(join(root, "supabase/patch-005-brands.sql")), "patch-005 missing");
+assert.ok(read("app/super/page.tsx").includes("createBrandRow"), "super manager missing");
 
 // 10. Audit fixes: guards, compareAt, decrement, track lokal, super hidup
 assert.ok(read("lib/products.ts").includes("mainImage"), "mainImage missing");
@@ -56,7 +60,9 @@ assert.ok(existsSync(join(root, "supabase/patch-003-stock.sql")), "patch-003 mis
 assert.ok(read("lib/supabase.ts").includes("decrementStock"), "decrementStock missing");
 assert.ok(read("app/api/checkout/route.ts").includes("decrementStock"), "checkout decrement missing");
 assert.ok(read("app/track-order/page.tsx").includes("listOrders"), "track lokal missing");
-assert.ok(read("app/super/page.tsx").includes("useBrand"), "super mati");
+assert.ok(read("app/super/page.tsx").includes("createBrandRow"), "super mati");
+assert.ok(read("lib/brand-resolve.ts").includes("resolveBrand"), "resolveBrand missing");
+assert.ok(existsSync(join(root, "supabase/patch-005-brands.sql")), "patch-005 missing");
 
 // 11. CMS penuh: promo, status order, CSV import, stats, reorder, coret
 assert.ok(existsSync(join(root, "supabase/patch-004-promo.sql")), "patch-004 missing");

@@ -330,6 +330,7 @@ export async function fetchPromo(code: string): Promise<Discount | null> {
 
 /** Semua promo untuk admin. */
 export async function fetchDiscounts(): Promise<Discount[] | null> {
+
   if (!supabaseConfigured() || !getSession()) return null;
   try {
     return await readJson(`discounts?select=code,percent,active&order=code`);
@@ -374,4 +375,69 @@ export async function probeDb(brandId: string): Promise<DbHealth> {
   } catch {
     return { state: "offline" };
   }
+}
+
+/* ---------- superadmin: kelola brand (butuh role superadmin, patch-005) ---------- */
+
+export interface BrandAdminRow {
+  id: string;
+  name: string;
+  slug: string;
+  template: string;
+  currency: string;
+  domain: string;
+  active: boolean;
+  config: Record<string, unknown> | null;
+}
+
+/** Role user login (null = tamu). */
+export async function fetchOwnRole(): Promise<string | null> {
+  if (!supabaseConfigured() || !getSession()) return null;
+  try {
+    const rows = await readJson<{ role: string }[]>(`profiles?select=role&limit=1`);
+    return rows[0]?.role ?? null;
+  } catch {
+    return null;
+  }
+}
+
+/** Daftar semua brand (butuh akses baca admin; publik hanya yang aktif). */
+export async function fetchAllBrands(): Promise<BrandAdminRow[] | null> {
+  if (!supabaseConfigured() || !getSession()) return null;
+  try {
+    return await readJson(`brands?select=id,name,slug,template,currency,domain,active,config&order=name`);
+  } catch {
+    return null;
+  }
+}
+
+/** Buat brand baru (superadmin). */
+export async function createBrandRow(row: {
+  id: string; name: string; slug: string; template: string; currency: string;
+  domain: string; active: boolean; config: Record<string, unknown>;
+}): Promise<void> {
+  const res = await rest("brands", {
+    method: "POST",
+    headers: { Prefer: "return=minimal" },
+    body: JSON.stringify(row),
+  });
+  if (!res.ok) throw new Error(`Supabase ${res.status}`);
+}
+
+/** Update brand (superadmin / brand_admin pemilik). */
+export async function updateBrandRow(id: string, patch: Partial<{
+  name: string; slug: string; template: string; currency: string;
+  domain: string; active: boolean; config: Record<string, unknown>;
+}>): Promise<void> {
+  const res = await rest(`brands?id=eq.${encodeURIComponent(id)}`, {
+    method: "PATCH",
+    body: JSON.stringify(patch),
+  });
+  if (!res.ok) throw new Error(`Supabase ${res.status}`);
+}
+
+/** Hapus brand (superadmin). Produk/order yatim tetap di DB (aman). */
+export async function deleteBrandRow(id: string): Promise<void> {
+  const res = await rest(`brands?id=eq.${encodeURIComponent(id)}`, { method: "DELETE" });
+  if (!res.ok) throw new Error(`Supabase ${res.status}`);
 }

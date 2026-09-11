@@ -3,6 +3,8 @@ import { useEffect, type ReactNode } from "react";
 import Lenis from "lenis";
 
 // ponytail: one smooth-scroll lib, no GSAP. Skip if prefers-reduced-motion.
+// Touch dibiarkan native (smoothTouch false) agar scroll HP tidak dibajak;
+// scroller bersarang (modal/drawer/horizontal) wajib data-lenis-prevent.
 export default function SmoothScroll({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;

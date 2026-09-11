@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { products } from "@/lib/products";
+import { resolveBrand } from "@/lib/brand-resolve";
 import { saveOrder, decrementStock, fetchPromo, supabaseConfigured } from "@/lib/supabase";
 
 // Mock checkout (payment HOLD). Hardened like production:
@@ -22,18 +23,18 @@ const UUID = /^[0-9a-f-]{36}$/i;
 
 interface ValidItem { slug: string; qty: number; size: string; price: number; stockSlug: string | null }
 
-async function dbStockRow(slug: string): Promise<{ type: string; stock_qty: number } | null> {
-  // Read publik (policy published=true). Gagal/offline -> null = skip decrement.
+async function dbStockRow(slug: string): Promise<{ type: string; stock_qty: number; price_usd: number; sizes: string[]; published: boolean } | null> {
+  // Read publik (policy published=true). Gagal/offline -> null = fallback seed.
   if (!supabaseConfigured()) return null;
   try {
     const base = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
     const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "";
     const res = await fetch(
-      `${base}/rest/v1/products?slug=eq.${encodeURIComponent(slug)}&select=type,stock_qty&limit=1`,
+      `${base}/rest/v1/products?slug=eq.${encodeURIComponent(slug)}&select=type,stock_qty,price_usd,sizes,published&limit=1`,
       { headers: { apikey: key, Authorization: `Bearer ${key}` }, cache: "no-store" }
     );
     if (!res.ok) return null;
-    const rows = (await res.json()) as { type: string; stock_qty: number }[];
+    const rows = (await res.json()) as { type: string; stock_qty: number; price_usd: number; sizes: string[]; published: boolean }[];
     return rows[0] ?? null;
   } catch {
     return null;
@@ -55,6 +56,8 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Valid email required" }, { status: 400 });
   }
   const lane = b.lane === "express" ? "express" : "economy";
+  const { brand } = await resolveBrand();
+  const brandId = brand.id;
   if (!Array.isArray(b.items) || b.items.length === 0 || b.items.length > 20) {
     return NextResponse.json({ error: "1–20 items required" }, { status: 400 });
   }
@@ -83,7 +86,21 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: `Qty 1–9 for ${slug}` }, { status: 400 });
     }
     const p = products.find((x) => x.slug === slug && x.published);
-    if (p) {
+    // DB menang atas seed (harga/size/status editan admin). Fallback seed bila offline.
+    const db = await dbStockRow(slug);
+    if (db) {
+      if (!db.published) {
+        return NextResponse.json({ error: `Unavailable: ${slug}` }, { status: 400 });
+      }
+      if (typeof i.size !== "string" || !db.sizes.includes(i.size)) {
+        return NextResponse.json({ error: `Invalid size for ${slug}` }, { status: 400 });
+      }
+      if (!Number.isFinite(db.price_usd) || db.price_usd < 1 || db.price_usd > 99999) {
+        return NextResponse.json({ error: `Bad price: ${slug}` }, { status: 400 });
+      }
+      subtotal += Math.round(db.price_usd) * qty;
+      valid.push({ slug, qty, size: i.size, price: Math.round(db.price_usd), stockSlug: db.type === "stock" ? slug : null });
+    } else if (p) {
       if (typeof i.size !== "string" || !p.sizes.includes(i.size)) {
         return NextResponse.json({ error: `Invalid size for ${p.slug}` }, { status: 400 });
       }
@@ -111,7 +128,7 @@ export async function POST(req: Request) {
     const row = await dbStockRow(v.stockSlug);
     if (!row || row.type !== "stock") continue; // tidak dikelola DB -> skip
     try {
-      await decrementStock("a-private-violence", v.stockSlug, v.qty);
+      await decrementStock(brandId, v.stockSlug, v.qty);
     } catch (e) {
       if ((e as Error & { stock?: boolean }).stock) {
         return NextResponse.json({ error: `Insufficient stock: ${v.slug}` }, { status: 409 });
@@ -140,7 +157,7 @@ export async function POST(req: Request) {
   try {
     finalId = await saveOrder(
       {
-        brand_id: "a-private-violence",
+        brand_id: brandId,
         email: b.email,
         items: valid,
         total_usd: total,

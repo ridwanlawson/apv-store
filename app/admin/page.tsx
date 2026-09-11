@@ -1,22 +1,29 @@
 "use client";
 import { useEffect, useState } from "react";
 import { useProductStore, toCSV, parseCSV, useMounted, persistProduct, removeProduct } from "@/lib/store";
+import { useBrand } from "@/lib/brand-store";
 import { useAuth } from "@/lib/auth";
 import { listOrders } from "@/lib/orders";
 import { fetchOrders, getSession, probeDb, type DbHealth, type DbOrderRow } from "@/lib/supabase";
+import { BrandForm } from "@/components/admin/BrandForm";
+import { ProductEditor } from "@/components/admin/ProductEditor";
+import { PromoManager } from "@/components/admin/PromoManager";
+import { OrderCard } from "@/components/admin/OrderCard";
+import type { Product } from "@/lib/products";
 
 /** Strip statistik + stok menipis untuk CMS harian. */
 function StatsStrip() {
   const { items } = useProductStore();
+  const { id: brandId } = useBrand();
   const [orders, setOrders] = useState<{ total: number }[] | null>(null);
   useEffect(() => {
     let live = true;
     if (!getSession()) return;
-    fetchOrders("a-private-violence")
+    fetchOrders(brandId)
       .then((r) => { if (live) setOrders((r ?? []).map((o) => ({ total: o.total_usd }))); })
       .catch(() => { if (live) setOrders(null); });
     return () => { live = false; };
-  }, []);
+  }, [brandId]);
   const local = listOrders();
   const revenue = orders ? orders.reduce((a, o) => a + o.total, 0) : local.reduce((a, o) => a + o.total, 0);
   const nOrders = orders ? orders.length : local.length;
@@ -39,16 +46,17 @@ function StatsStrip() {
 function DbBadge() {
   const [health, setHealth] = useState<DbHealth | null>(null);
   const [checking, setChecking] = useState(true);
+  const { id: brandId } = useBrand();
   useEffect(() => {
     let live = true;
-    probeDb("a-private-violence")
+    probeDb(brandId)
       .then((h) => { if (live) { setHealth(h); setChecking(false); } })
       .catch(() => { if (live) { setHealth({ state: "offline" }); setChecking(false); } });
     return () => { live = false; };
-  }, []);
+  }, [brandId]);
   const check = () => {
     setChecking(true);
-    probeDb("a-private-violence")
+    probeDb(brandId)
       .then((h) => { setHealth(h); setChecking(false); })
       .catch(() => { setHealth({ state: "offline" }); setChecking(false); });
   };
@@ -67,16 +75,12 @@ function DbBadge() {
     </p>
   );
 }
-import { BrandForm } from "@/components/admin/BrandForm";
-import { ProductEditor } from "@/components/admin/ProductEditor";
-import { PromoManager } from "@/components/admin/PromoManager";
-import { OrderCard } from "@/components/admin/OrderCard";
-import type { Product } from "@/lib/products";
 
 // Brand-admin: tambah/edit produk + stok via UI (persisten localStorage;
 // colok Supabase via lib/supabase.ts + Auth asli saat env tersedia — tanpa ubah UI).
 export default function Admin() {
   const { user, mode, demoLogin, magicLink, logout } = useAuth();
+  const { id: brandId } = useBrand();
   const { items, setItems } = useProductStore();
   const [email, setEmail] = useState("");
   const [err, setErr] = useState("");
@@ -95,19 +99,19 @@ export default function Admin() {
       setDbOrders(null);
       return;
     }
-    fetchOrders("a-private-violence")
+    fetchOrders(brandId)
       .then((r) => setDbOrders(r ?? []))
       .catch(() => setDbOrders(null));
   };
   useEffect(() => {
     let live = true;
     if (tab === "orders" && user && mounted && getSession()) {
-      fetchOrders("a-private-violence")
+      fetchOrders(brandId)
         .then((r) => { if (live) setDbOrders(r ?? []); })
         .catch(() => { if (live) setDbOrders(null); });
     }
     return () => { live = false; };
-  }, [tab, user, mounted]);
+  }, [tab, user, mounted, brandId]);
   const orders = tab === "orders" && mounted ? listOrders() : [];
   const orderCount = dbOrders ? dbOrders.length : mounted ? listOrders().length : 0;
 
@@ -143,7 +147,7 @@ export default function Admin() {
     const slug = `${clean.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "")}-${Date.now().toString(36)}`;
     // Tanpa foto tempelan: editor langsung dibuka agar dilengkapi (wajib >=1 foto).
     const p: Product = {
-      id: slug, brandId: "a-private-violence", name: clean, slug, priceUsd: Math.round(num),
+      id: slug, brandId, name: clean, slug, priceUsd: Math.round(num),
       weightG: 300, type, stockQty: type === "stock" ? Math.max(0, Number(stock) || 0) : undefined,
       podSku: type === "pod" ? `APV-${Date.now().toString(36).toUpperCase()}` : undefined,
       images: [],
@@ -217,7 +221,7 @@ export default function Admin() {
                 if (!f) return;
                 const rd = new FileReader();
                 rd.onload = () => {
-                  const news = parseCSV(String(rd.result ?? ""), "a-private-violence");
+                  const news = parseCSV(String(rd.result ?? ""), brandId);
                   if (news.length === 0) { setCsvMsg("CSV kosong / format salah."); return; }
                   setItems((prev) => [...news, ...prev]);
                   news.forEach((p) => {
