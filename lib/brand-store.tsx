@@ -14,6 +14,8 @@ export type BrandOverride = Partial<{
   name: string;
   tagline: string;
   contact: string;
+  whatsapp: string;
+  announcement: string;
   logo: string;
   logoFull: string;
   favicon: string;

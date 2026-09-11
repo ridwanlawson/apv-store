@@ -100,6 +100,8 @@ export default function Super() {
       name: r.name,
       tagline: (c.tagline as string) ?? "",
       contact: (c.contact as string) ?? "",
+      whatsapp: (c.whatsapp as string) ?? "",
+      announcement: (c.announcement as string) ?? "",
       logo: (c.logo as string) ?? "",
       logoFull: (c.logoFull as string) ?? "",
       favicon: (c.favicon as string) ?? "",

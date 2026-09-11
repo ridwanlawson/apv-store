@@ -7,6 +7,7 @@ import { CartProvider } from "@/lib/cart";
 import SmoothScroll from "@/components/SmoothScroll";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
+import { Preloader } from "@/components/Preloader";
 import { ApplyBrandTheme } from "@/components/ApplyBrandTheme";
 import { CookieConsent } from "@/components/CookieConsent";
 import { CurrencyProvider } from "@/lib/currency";
@@ -51,6 +52,7 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
           <LangProvider>
           <BrandProvider initial={b}>
           <SmoothScroll>
+            <Preloader />
             <ApplyBrandTheme />
             <Navbar />
             <div className="pt-[100px] sm:pt-16">{children}</div>

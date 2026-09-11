@@ -171,13 +171,18 @@ export async function POST(req: Request) {
     // Duplikat key = retry setelah sukses -> respons dedupe dengan total hitung-ulang.
     if ((e as Error & { status?: number }).status === 409) {
       if (key) seen.set(key, { orderId, total, at: Date.now() });
-      const wa = `https://wa.me/?text=${encodeURIComponent(`Order ${orderId} $${total} via ${lane}`)}`;
+      const waNum2 = (brand.whatsapp ?? "").replace(/\D/g, "");
+      const waBase2 = waNum2.length >= 8 && waNum2.length <= 15 ? `https://wa.me/${waNum2}` : "https://wa.me";
+      const wa = `${waBase2}?text=${encodeURIComponent(`Order ${orderId} $${total} via ${lane}`)}`;
       return NextResponse.json({ orderId, total, deduped: true, url: `/success?order=${orderId}&wa=${encodeURIComponent(wa)}` });
     }
     console.error("[checkout:db] save failed, MOCK fallback:", e instanceof Error ? e.message : e);
     finalId = `MOCK-${Date.now().toString(36).toUpperCase()}`;
   }
   if (key) seen.set(key, { orderId: finalId, total, at: Date.now() });
-  const wa = `https://wa.me/?text=${encodeURIComponent(`Order ${finalId} $${total} via ${lane} (${valid.length} items)`)}`;
+  // WhatsApp: nomor dari admin (/super → Tampilan → WA). Kosong = link share.
+  const waNum = (brand.whatsapp ?? "").replace(/\D/g, "");
+  const waBase = waNum.length >= 8 && waNum.length <= 15 ? `https://wa.me/${waNum}` : "https://wa.me";
+  const wa = `${waBase}?text=${encodeURIComponent(`Order ${finalId} $${total} via ${lane} (${valid.length} items)`)}`;
   return NextResponse.json({ orderId: finalId, total, discount, promoPercent, promoCode, url: `/success?order=${finalId}&wa=${encodeURIComponent(wa)}` });
 }
