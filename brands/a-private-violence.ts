@@ -16,6 +16,10 @@ export interface BrandConfig {
   lang: string;
   contact: string;
   whatsapp?: string; // nomor WA order (digit saja, mis. 6281234567890). Kosong = link share.
+  phone?: string; // nomor tampil (bebas format, mis. +62 812-3456-7890).
+  address?: string; // alamat fisik tampil (1-2 baris, mis. Jl. … Bandung, Indonesia).
+  hours?: string; // jam operasional tampil (mis. Mon–Sat 10:00–18:00 WIB).
+  mapsUrl?: string; // link Google Maps tampil (https://…).
   announcement?: string; // bar pengumuman di atas halaman (kosong = sembunyi).
   socials: { instagram?: string; tiktok?: string };
   hero: { headline: string; sub: string; cta: string; poster: string };
@@ -40,7 +44,11 @@ export const aPrivateViolence: BrandConfig = {
   currency: "USD",
   lang: "en",
   contact: "support@aprivateviolence.com",
-  socials: { instagram: "https://instagram.com", tiktok: "https://tiktok.com" },
+  phone: "",
+  address: "",
+  hours: "",
+  mapsUrl: "",
+  socials: {},
   hero: {
     headline: "WEAR THE NOISE",
     sub: "Heavyweight tees, hoodies & cargos. Designed dark, shipped worldwide.",

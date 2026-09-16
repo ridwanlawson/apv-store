@@ -49,6 +49,10 @@ export function brandFromRow(row: BrandRow): BrandConfig {
     lang: "en",
     contact: (c.contact as string) ?? DEFAULTS.contact,
     whatsapp: (c.whatsapp as string) ?? undefined,
+    phone: (c.phone as string) ?? undefined,
+    address: (c.address as string) ?? undefined,
+    hours: (c.hours as string) ?? undefined,
+    mapsUrl: (c.mapsUrl as string) ?? undefined,
     announcement: (c.announcement as string) ?? undefined,
     socials,
     hero: {

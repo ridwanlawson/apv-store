@@ -112,4 +112,14 @@ assert.ok(read("app/admin/page.tsx").includes('"orders"'), "admin orders tab mis
 assert.ok(!read("lib/payments.ts").includes("mockCheckout"), "dead mockCheckout remains");
 assert.ok(!read("app/sitemap.ts").includes("void getBrand"), "sitemap cruft remains");
 
+// 12. Kontak + analytics + thank-you
+assert.ok(read("components/admin/BrandForm.tsx").includes("mapsUrl"), "kontak form missing");
+assert.ok(read("lib/brand-resolve.ts").includes("mapsUrl"), "brand resolve kontak missing");
+assert.ok(read("lib/analytics.tsx").includes("apv-consent-v1"), "analytics consent gate missing");
+assert.ok(read("app/layout.tsx").includes("<Analytics"), "analytics mount missing");
+assert.ok(existsSync(join(root, "app/policies/terms/page.tsx")), "terms missing");
+assert.ok(read("app/sitemap.ts").includes("/policies/terms"), "sitemap terms missing");
+assert.ok(read("app/success/page.tsx").includes("index: false"), "success noindex missing");
+assert.ok(existsSync(join(root, "app/thank-you/page.tsx")), "thank-you alias missing");
+
 console.log(`SMOKE OK — ${slugs.length} SKUs, checkout hardened, routes present.`);

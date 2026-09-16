@@ -23,9 +23,21 @@ export function Footer() {
           <a href="/policies/shipping" className="hover:underline">{t("footShip")}</a>
           <a href="/policies/returns" className="hover:underline">{t("footRet")}</a>
           <a href="/policies/privacy" className="hover:underline">{t("footPriv")}</a>
+          <a href="/policies/terms" className="hover:underline">{t("footTerms")}</a>
         </nav>
       </div>
-      <p className="mx-auto mt-2 max-w-6xl opacity-70">Contact: {b.contact} · {t("footNote")}</p>
+      <div className="mx-auto mt-2 max-w-6xl space-y-1 opacity-70">
+        <p>Contact: {b.contact}{b.phone ? ` · ${b.phone}` : ""} · {t("footNote")}</p>
+        {b.address && (
+          <p>{b.address}{b.hours ? ` · ${b.hours}` : ""}{b.mapsUrl ? <> · <a href={b.mapsUrl} target="_blank" rel="noreferrer" className="underline">Maps</a></> : null}</p>
+        )}
+        {(b.socials.instagram || b.socials.tiktok) && (
+          <p className="flex gap-4">
+            {b.socials.instagram && <a href={b.socials.instagram} target="_blank" rel="noreferrer" className="hover:underline">Instagram</a>}
+            {b.socials.tiktok && <a href={b.socials.tiktok} target="_blank" rel="noreferrer" className="hover:underline">TikTok</a>}
+          </p>
+        )}
+      </div>
     </footer>
   );
 }

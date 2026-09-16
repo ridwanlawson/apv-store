@@ -15,12 +15,17 @@ export type BrandOverride = Partial<{
   tagline: string;
   contact: string;
   whatsapp: string;
+  phone: string;
+  address: string;
+  hours: string;
+  mapsUrl: string;
   announcement: string;
   logo: string;
   logoFull: string;
   favicon: string;
   colors: BrandConfig["colors"];
   hero: { headline: string; sub: string; cta: string };
+  socials: { instagram?: string; tiktok?: string };
 }>;
 
 function load(id: string): BrandOverride {
@@ -40,6 +45,7 @@ function merge(base: BrandConfig, override: BrandOverride): BrandConfig {
     ...override,
     colors: { ...base.colors, ...(override.colors ?? {}) },
     hero: { ...base.hero, ...(override.hero ?? {}) },
+    socials: { ...base.socials, ...(override.socials ?? {}) },
   };
 }
 

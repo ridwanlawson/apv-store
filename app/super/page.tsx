@@ -96,12 +96,19 @@ export default function Super() {
     const c = (r.config ?? {}) as Record<string, unknown>;
     const colors = (c.colors ?? {}) as Record<string, string>;
     const hero = (c.hero ?? {}) as Record<string, string>;
+    const socials = (c.socials ?? {}) as Record<string, string>;
     return {
       brandId: r.id,
       name: r.name,
       tagline: (c.tagline as string) ?? "",
       contact: (c.contact as string) ?? "",
       whatsapp: (c.whatsapp as string) ?? "",
+      phone: (c.phone as string) ?? "",
+      address: (c.address as string) ?? "",
+      hours: (c.hours as string) ?? "",
+      mapsUrl: (c.mapsUrl as string) ?? "",
+      instagram: socials.instagram ?? "",
+      tiktok: socials.tiktok ?? "",
       announcement: (c.announcement as string) ?? "",
       logo: (c.logo as string) ?? "",
       logoFull: (c.logoFull as string) ?? "",

@@ -10,6 +10,7 @@ import { Footer } from "@/components/Footer";
 import { Preloader } from "@/components/Preloader";
 import { ApplyBrandTheme } from "@/components/ApplyBrandTheme";
 import { CookieConsent } from "@/components/CookieConsent";
+import { Analytics } from "@/lib/analytics";
 import { CurrencyProvider } from "@/lib/currency";
 import { AuthProvider } from "@/lib/auth";
 import { LangProvider } from "@/lib/i18n";
@@ -58,6 +59,7 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
             <div className="pt-[100px] sm:pt-16">{children}</div>
             <Footer />
             <CookieConsent />
+            <Analytics />
           </SmoothScroll>
           </BrandProvider>
           </LangProvider>

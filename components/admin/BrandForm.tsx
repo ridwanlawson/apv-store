@@ -9,6 +9,12 @@ export interface BrandFormInitial {
   tagline: string;
   contact: string;
   whatsapp: string;
+  phone: string;
+  address: string;
+  hours: string;
+  mapsUrl: string;
+  instagram: string;
+  tiktok: string;
   announcement: string;
   logo: string;
   logoFull: string;
@@ -27,7 +33,10 @@ export function BrandForm({ initial, onSave, onReset, submitLabel = "Simpan tamp
 } = {}) {
   const b = useBrand();
   const src: BrandFormInitial = initial ?? {
-    brandId: b.id, name: b.name, tagline: b.tagline, contact: b.contact, whatsapp: b.whatsapp ?? "", announcement: b.announcement ?? "",
+    brandId: b.id, name: b.name, tagline: b.tagline, contact: b.contact, whatsapp: b.whatsapp ?? "",
+    phone: b.phone ?? "", address: b.address ?? "", hours: b.hours ?? "", mapsUrl: b.mapsUrl ?? "",
+    instagram: b.socials.instagram ?? "", tiktok: b.socials.tiktok ?? "",
+    announcement: b.announcement ?? "",
     logo: b.logo ?? "", logoFull: b.logoFull ?? "", favicon: b.favicon ?? "",
     colors: b.colors, hero: b.hero,
   };
@@ -35,6 +44,12 @@ export function BrandForm({ initial, onSave, onReset, submitLabel = "Simpan tamp
   const [tagline, setTagline] = useState(src.tagline);
   const [contact, setContact] = useState(src.contact);
   const [whatsapp, setWhatsapp] = useState(src.whatsapp);
+  const [phone, setPhone] = useState(src.phone);
+  const [address, setAddress] = useState(src.address);
+  const [hours, setHours] = useState(src.hours);
+  const [mapsUrl, setMapsUrl] = useState(src.mapsUrl);
+  const [instagram, setInstagram] = useState(src.instagram);
+  const [tiktok, setTiktok] = useState(src.tiktok);
   const [announcement, setAnnouncement] = useState(src.announcement);
   const [logo, setLogo] = useState(src.logo);
   const [logoFull, setLogoFull] = useState(src.logoFull);
@@ -49,7 +64,9 @@ export function BrandForm({ initial, onSave, onReset, submitLabel = "Simpan tamp
   const [synced, setSynced] = useState(src.name + src.brandId);
   if (synced !== src.name + src.brandId && document.activeElement?.tagName !== "INPUT") {
     setSynced(src.name + src.brandId);
-    setName(src.name); setTagline(src.tagline); setContact(src.contact); setWhatsapp(src.whatsapp); setAnnouncement(src.announcement);
+    setName(src.name); setTagline(src.tagline); setContact(src.contact); setWhatsapp(src.whatsapp);
+    setPhone(src.phone); setAddress(src.address); setHours(src.hours); setMapsUrl(src.mapsUrl);
+    setInstagram(src.instagram); setTiktok(src.tiktok); setAnnouncement(src.announcement);
     setLogo(src.logo); setLogoFull(src.logoFull); setFavicon(src.favicon);
     setColors({ ...src.colors }); setHero({ ...src.hero });
   }
@@ -58,7 +75,18 @@ export function BrandForm({ initial, onSave, onReset, submitLabel = "Simpan tamp
     setSaving(true);
     setMsg("");
     try {
-      const patch = { name, tagline, contact, whatsapp: whatsapp.replace(/\D/g, ""), announcement, logo, logoFull, favicon, colors, hero };
+      if (contact && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(contact.trim())) throw new Error("Email kontak tidak valid.");
+      const wa = whatsapp.replace(/\D/g, "");
+      if (wa && (wa.length < 8 || wa.length > 15)) throw new Error("WA 8–15 digit.");
+      for (const [label, url] of [["Instagram", instagram], ["TikTok", tiktok], ["Maps", mapsUrl]] as const) {
+        if (url && !/^https:\/\//.test(url.trim())) throw new Error(`${label} harus https://…`);
+      }
+      const patch = {
+        name, tagline, contact: contact.trim(), whatsapp: wa, phone: phone.trim(),
+        address: address.trim(), hours: hours.trim(), mapsUrl: mapsUrl.trim(),
+        socials: { instagram: instagram.trim(), tiktok: tiktok.trim() },
+        announcement, logo, logoFull, favicon, colors, hero,
+      };
       if (onSave) await onSave(patch);
       else await saveBrand(patch, src.brandId);
       setSaved(true);
@@ -124,6 +152,26 @@ export function BrandForm({ initial, onSave, onReset, submitLabel = "Simpan tamp
             <input value={whatsapp} onChange={(e) => setWhatsapp(e.target.value.replace(/\D/g, ""))} inputMode="tel" placeholder="6281234567890" className={`mt-1 ${input}`} /></label>
           <label className="text-xs opacity-70">Pengumuman (kosongkan untuk sembunyi)
             <input value={announcement} onChange={(e) => setAnnouncement(e.target.value)} placeholder="FREE WORLDWIDE SHIPPING OVER $150" className={`mt-1 ${input}`} /></label>
+        </div>
+      </div>
+
+      <div className="rounded-xl border border-white/10 p-4">
+        <p className="font-bold">Kontak & alamat (tampil di footer)</p>
+        <div className="mt-2 grid gap-2">
+          <label className="text-xs opacity-70">Telepon tampil (opsional, cth +62 812-3456-7890)
+            <input value={phone} onChange={(e) => setPhone(e.target.value)} inputMode="tel" placeholder="+62…" className={`mt-1 ${input}`} /></label>
+          <label className="text-xs opacity-70">Alamat fisik (1–2 baris, tampil + dipakai di Privacy/Shipping)
+            <input value={address} onChange={(e) => setAddress(e.target.value)} placeholder="Jl. … Bandung, Indonesia" className={`mt-1 ${input}`} /></label>
+          <label className="text-xs opacity-70">Jam operasional (cth Mon–Sat 10:00–18:00 WIB)
+            <input value={hours} onChange={(e) => setHours(e.target.value)} className={`mt-1 ${input}`} /></label>
+          <label className="text-xs opacity-70">Link Google Maps (https://…, kosong = sembunyi)
+            <input value={mapsUrl} onChange={(e) => setMapsUrl(e.target.value)} inputMode="url" placeholder="https://maps.google.com/…" className={`mt-1 ${input}`} /></label>
+          <div className="grid gap-2 sm:grid-cols-2">
+            <label className="text-xs opacity-70">Instagram URL
+              <input value={instagram} onChange={(e) => setInstagram(e.target.value)} inputMode="url" placeholder="https://instagram.com/…" className={`mt-1 ${input}`} /></label>
+            <label className="text-xs opacity-70">TikTok URL
+              <input value={tiktok} onChange={(e) => setTiktok(e.target.value)} inputMode="url" placeholder="https://tiktok.com/…" className={`mt-1 ${input}`} /></label>
+          </div>
         </div>
       </div>
 

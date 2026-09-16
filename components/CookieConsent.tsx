@@ -22,6 +22,7 @@ export function CookieConsent() {
   const pick = (v: "accepted" | "declined") => {
     try {
       localStorage.setItem(KEY, v);
+      window.dispatchEvent(new Event("apv-consent"));
     } catch {
       /* abaikan */
     }
