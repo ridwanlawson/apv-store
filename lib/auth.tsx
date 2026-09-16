@@ -175,7 +175,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           body: JSON.stringify({ email: clean }),
         }
       );
-      if (!res.ok) throw new Error("Magic link failed");
+      if (!res.ok) {
+        let detail = `HTTP ${res.status}`;
+        try {
+          const j = (await res.json()) as { msg?: string; message?: string };
+          if (j.msg || j.message) detail = j.msg ?? j.message ?? detail;
+        } catch {
+          /* abaikan */
+        }
+        throw new Error(`Magic link failed (${detail})`);
+      }
       // JANGAN login di sini — login terjadi saat user kembali membawa #access_token.
     },
     logout: () => {
