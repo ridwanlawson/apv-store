@@ -39,6 +39,16 @@ function decodeExp(token: string): number {
   }
 }
 
+/** Ambil sub (user_id) dari JWT tanpa verifikasi (cukup untuk filter query milik sendiri). */
+function decodeSub(token: string): string | null {
+  try {
+    const p = JSON.parse(atob(token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/")));
+    return typeof p.sub === "string" ? p.sub : null;
+  } catch {
+    return null;
+  }
+}
+
 /** Access token segar (refresh otomatis bila <60 detik). Null = anonim. */
 async function freshAccess(): Promise<string | null> {
   const s = getSession();
@@ -390,10 +400,16 @@ export interface BrandAdminRow {
   config: Record<string, unknown> | null;
 }
 
-/** Role user login (null = tamu). */
-export async function fetchOwnRole(): Promise<string | null> {  if (!supabaseConfigured() || !getSession()) return null;
+/** Role user login (null = tamu). Selalu filter user sendiri — tanpa filter,
+ * limit=1 bisa mengembalikan baris orang lain (mis. brand_admin). */
+export async function fetchOwnRole(): Promise<string | null> {
+  if (!supabaseConfigured() || !getSession()) return null;
   try {
-    const rows = await readJson<{ role: string }[]>(`profiles?select=role&limit=1`);
+    const sub = decodeSub(getSession()?.access ?? "");
+    if (!sub) return null;
+    const rows = await readJson<{ role: string }[]>(
+      `profiles?select=role&user_id=eq.${encodeURIComponent(sub)}&limit=1`
+    );
     return rows[0]?.role ?? null;
   } catch {
     return null;

@@ -29,6 +29,9 @@ Hasil akhir: `https://<nama>.vercel.app` + HTTPS otomatis. Tanpa kartu kredit.
    (Key di atas = publishable, aman untuk env. JANGAN pernah taruh secret key di sini —
    secret live payment nanti via dashboard manual.)
 4. **Deploy** → tunggu ±2 menit → dapat URL `https://apv-store-xxx.vercel.app`.
+5. **Supabase → Authentication → URL Configuration** (wajib, kalau tidak link magic-link mengarah ke localhost):
+   - **Site URL** = `https://<nama>.vercel.app` (URL produksi)
+   - **Redirect URLs** tambahkan: `https://<nama>.vercel.app/**` + `http://localhost:3000/**`
 5. (Opsional) Project → Settings → General → ganti nama project jadi `a-private-violence`
    agar URL cantik: `https://a-private-violence.vercel.app`.
 

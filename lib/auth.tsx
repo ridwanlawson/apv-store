@@ -120,7 +120,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           headers: { ...headers, Prefer: "return=minimal" },
           body: JSON.stringify({ user_id: sub, email: s.email, role: "pending" }),
         }).catch(() => undefined);
-        const res = await fetch(`${base}/rest/v1/profiles?select=role&limit=1`, { headers });
+        const res = await fetch(`${base}/rest/v1/profiles?select=role&user_id=eq.${encodeURIComponent(sub)}&limit=1`, { headers });
         if (!res.ok) return;
         const rows = (await res.json()) as { role: string }[];
         const role = (["superadmin", "brand_admin", "pending"] as const).find((x) => x === rows[0]?.role);
@@ -164,11 +164,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     },
     magicLink: async (email) => {
       const clean = email.trim().toLowerCase();
-      const res = await fetch(`${SUPA_URL}/auth/v1/magiclink`, {
-        method: "POST",
-        headers: { apikey: SUPA_KEY, "Content-Type": "application/json" },
-        body: JSON.stringify({ email: clean }),
-      });
+      // redirect_to = origin saat ini (localhost saat dev, vercel.app saat live).
+      // Wajib allowlist di Supabase → Authentication → URL Configuration → Redirect URLs.
+      const redirectTo = typeof window !== "undefined" ? `${window.location.origin}/admin` : undefined;
+      const res = await fetch(
+        `${SUPA_URL}/auth/v1/magiclink${redirectTo ? `?redirect_to=${encodeURIComponent(redirectTo)}` : ""}`,
+        {
+          method: "POST",
+          headers: { apikey: SUPA_KEY, "Content-Type": "application/json" },
+          body: JSON.stringify({ email: clean }),
+        }
+      );
       if (!res.ok) throw new Error("Magic link failed");
       // JANGAN login di sini — login terjadi saat user kembali membawa #access_token.
     },
